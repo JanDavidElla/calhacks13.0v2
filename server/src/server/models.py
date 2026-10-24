@@ -45,6 +45,25 @@ class BuildPicks(BaseModel):
     compatibility: Compatibility
 
 
+# A plain alias, not `type`: a `type` alias becomes a $ref in the schema, which drops the
+# description below that tells Claude what each value means
+Fit = Literal["fits", "conflict", "unconfirmed"]
+
+
+class FitCheck(BaseModel):
+    """Claude's verdict on one pair of parts; server.score turns it into a scored check."""
+
+    parts: list[str] = Field(description="Categories of the two parts this check covers")
+    result: Fit = Field(
+        description="fits: they work together; conflict: a definite conflict; unconfirmed: "
+        "the listings don't confirm a detail that decides whether they work together"
+    )
+    reason: str = Field(
+        description="One sentence on why they work together, the conflict, or which detail "
+        "the listings don't confirm"
+    )
+
+
 # Amazon product data, from Apify search results or a product page the extension reads
 
 
