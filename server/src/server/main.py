@@ -17,6 +17,7 @@ from server.agent import (
     find_alternatives,
     plan_checklist,
 )
+from server.demo_cache import cached
 from server.models import (
     AlternativesRequest,
     AlternativesResponse,
@@ -98,7 +99,7 @@ async def create_plan(response: Response, text: TextField = None, audio: AudioFi
     with timings.measure("total"):
         request = await read_request(text, audio, timings)
         with agent_errors():
-            result = await plan_checklist(request, timings)
+            result = await cached("plan", request, PlanResponse, lambda: plan_checklist(request, timings), timings)
 
     response.headers["Server-Timing"] = timings.header()
     return result
@@ -109,7 +110,7 @@ async def evaluate_product(request: EvaluateRequest, response: Response) -> Eval
     """Score one product for its part of the request and against the user's setup."""
     timings = Timings()
     with timings.measure("total"), agent_errors():
-        result = await evaluate(request, timings)
+        result = await cached("evaluate", request, Evaluation, lambda: evaluate(request, timings), timings)
 
     response.headers["Server-Timing"] = timings.header()
     return result
@@ -120,7 +121,9 @@ async def alternatives(request: AlternativesRequest, response: Response) -> Alte
     """Find up to 3 options for a part that score higher than the product to beat."""
     timings = Timings()
     with timings.measure("total"), agent_errors():
-        result = await find_alternatives(request, timings)
+        result = await cached(
+            "alternatives", request, AlternativesResponse, lambda: find_alternatives(request, timings), timings
+        )
 
     response.headers["Server-Timing"] = timings.header()
     return result

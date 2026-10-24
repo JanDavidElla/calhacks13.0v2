@@ -328,6 +328,12 @@ Response:
 It's `null` when no `product` was sent. An empty list means nothing scored higher: show
 something like "This is already the best fit we found."
 
+**Show only alternatives that beat the score on screen.** This call judges the product to
+beat again, in its own Claude call, so its bar can be a few points off the `/api/evaluate`
+score the user sees. If the product shows 100 and the bar here was 90, an alternative at 95
+would come back as "better". When the evaluate score is in, hide any alternative whose
+`score` isn't above it, and treat an empty result as "already the best fit".
+
 Expected time: the slowest call, because it runs an Amazon search and then a Claude call.
 Expect about 15–25 seconds (17 in testing: 7 for the search, 11 for Claude). Start it at the same time as `/api/evaluate`, and
 show the score first.

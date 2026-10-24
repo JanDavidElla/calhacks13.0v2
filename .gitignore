@@ -21,3 +21,7 @@ build/
 
 # Live evaluation output
 server/evals/results/
+
+# Saved demo answers (DEMO_CACHE)
+server/demo-cache.json
+server/demo-cache.tmp

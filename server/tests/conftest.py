@@ -9,6 +9,8 @@ def fake_keys(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
     monkeypatch.setenv("XAI_API_KEY", "test-xai-key")
     monkeypatch.setenv("APIFY_API_TOKEN", "test-apify-token")
+    # A DEMO_CACHE=true in .env would replay saved answers instead of the fakes
+    monkeypatch.setenv("DEMO_CACHE", "false")
     get_settings.cache_clear()
 
 

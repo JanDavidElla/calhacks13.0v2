@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     apify_api_token: str
     # Only voice requests use xAI (speech to text), so the server runs without it
     xai_api_key: str | None = None
+    # Save every Evaluate-flow answer and replay it for the same request (server.demo_cache)
+    demo_cache: bool = False
 
 
 @lru_cache
