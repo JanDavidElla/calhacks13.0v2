@@ -325,6 +325,58 @@ button {
   line-height: 1.4;
 }
 
+.alternatives {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.alternative {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid #dcd5c8;
+  border-radius: 8px;
+  background: #fffcf6;
+  color: #302d27;
+  line-height: 1.4;
+  text-decoration: none;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.alternative:hover {
+  border-color: #8a4a1f;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
+}
+
+.alternative-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  color: #45634d;
+  font-weight: 600;
+}
+
+.alternative-heading strong {
+  font-size: 20px;
+}
+
+/* Amazon titles run long: two lines are enough to tell the options apart */
+.alternative-title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.alternative-reason {
+  color: #5c4a3a;
+  font-size: 12px;
+}
+
 .empty-state {
   padding: 24px;
   text-align: center;

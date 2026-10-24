@@ -5,6 +5,7 @@ import { guessCategory } from '@/utils/category';
 import { addToShortlist, cartCountItem, planItem, setupItem } from '@/utils/storage';
 import CartStatus from './CartStatus';
 import RequestForm from './RequestForm';
+import { useAlternatives, type AlternativesState } from './useAlternatives';
 import { useEvaluation, type EvaluationState } from './useEvaluation';
 import { useStoredItem } from './useStoredItem';
 
@@ -115,6 +116,54 @@ function ScoreCard({ product, parts, category, onCategoryChange, state }: ScoreC
   );
 }
 
+function priceDifference(difference: number | null): string {
+  if (difference === null || difference === 0) return 'same price';
+  const amount = `$${Math.abs(difference).toFixed(2)}`;
+  return difference < 0 ? `${amount} less` : `${amount} more`;
+}
+
+function Alternatives({ state }: { state: AlternativesState }) {
+  if (state.status === 'idle') return null;
+
+  return (
+    <div className="alternatives">
+      <strong>Better options</strong>
+      {state.status === 'loading' && (
+        <p className="page-hint">Searching Amazon for a better fit. This takes about 30 seconds.</p>
+      )}
+      {state.status === 'error' && <p className="error-message">{state.message}</p>}
+      {state.status === 'done' && state.alternatives.length === 0 && (
+        <p className="page-hint">This is already the best fit we found.</p>
+      )}
+      {state.status === 'done' &&
+        state.alternatives.map(({ product, score, checks, price_difference }) => {
+          // Why it fits: against the setup when there is one, otherwise against the request
+          const why =
+            checks.find((check) => check.kind === 'compatibility') ??
+            checks.find((check) => check.kind === 'match');
+          return (
+            <a
+              key={product.asin}
+              className="alternative"
+              href={product.url}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span className="alternative-heading">
+                <strong>{score}%</strong>
+                <span>
+                  ${product.price.toFixed(2)} · {priceDifference(price_difference)}
+                </span>
+              </span>
+              <span className="alternative-title">{product.title}</span>
+              {why && <span className="alternative-reason">{why.reason}</span>}
+            </a>
+          );
+        })}
+    </div>
+  );
+}
+
 type ProductFitProps = {
   product: Product;
   plan: Plan;
@@ -126,10 +175,16 @@ function ProductFit({ product, plan, setup }: ProductFitProps) {
   const [category, setCategory] = useState(() => guessCategory(product.title, plan.parts));
   const part = plan.parts.find((candidate) => candidate.category === category) ?? plan.parts[0];
   const state = useEvaluation(product, plan.transcript, part, setup);
+  const score = state.status === 'done' ? state.evaluation.score : null;
+  const alternatives = useAlternatives(product, plan.transcript, part, setup, score);
   const checks = state.status === 'done' ? state.evaluation.checks : [];
   const pros = checks.filter((check) => check.status === 'pass');
   const cons = checks.filter((check) => check.status === 'fail');
-  const missing = checks.filter((check) => check.status === 'warn');
+  // A warning on match or compatibility means the listing doesn't confirm a spec. On budget
+  // or reviews it means a little over budget or a middling rating, so it gets its own box
+  const warnings = checks.filter((check) => check.status === 'warn');
+  const missing = warnings.filter((check) => check.kind === 'match' || check.kind === 'compatibility');
+  const worthChecking = warnings.filter((check) => !missing.includes(check));
   const shortlisted = setup.some((entry) => entry.product.asin === product.asin);
 
   return (
@@ -157,7 +212,11 @@ function ProductFit({ product, plan, setup }: ProductFitProps) {
             detail={reasons(missing)}
           />
         )}
+        {worthChecking.length > 0 && (
+          <Disclosure tone="warn" title="Worth checking" detail={reasons(worthChecking)} />
+        )}
       </div>
+      <Alternatives state={alternatives} />
       <button className="plan-link" onClick={() => void addToShortlist(category, product)} disabled={shortlisted}>
         {shortlisted ? '✓ On your shortlist' : `Add to shortlist as ${category}`}
       </button>

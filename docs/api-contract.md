@@ -370,8 +370,13 @@ so check them on a live page:
 | `price` | `#corePrice_feature_div .a-price .a-offscreen`, without the `$` |
 | `image` | `#landingImage`, its `src` |
 | `stars` | `#acrPopover`, its `title` ("4.7 out of 5 stars") |
-| `details` | text of `#feature-bullets` plus `#productDetails_techSpec_section_1` or `#prodDetails` |
+| `details` | a line per `#feature-bullets li`, then a `Label: value` line per row of the `#productOverview_feature_div` and `#prodDetails` tables; pages without those tables list details in `#detailBullets_feature_div li` |
 | `url` | `https://www.amazon.com/dp/<ASIN>`, without tracking parameters |
+
+Read `details` row by row, not as the whole section's text: `#prodDetails` also holds a feedback
+form's `<style>`, which fills the 4,000 characters before the later rows, and some cells hold an
+inline `<script>`. Skip rows that say nothing about the product, such as ASIN, UPC, Best Sellers
+Rank, and Customer Reviews.
 
 **Calling the server.** Call `http://127.0.0.1:8000/api/...` from the side panel or the service
 worker, not from the content script, because content scripts run as amazon.com and hit CORS.
