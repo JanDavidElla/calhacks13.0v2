@@ -98,6 +98,11 @@ one of `text` or `audio`.
 curl -F "text=a gaming PC for \$600" http://127.0.0.1:8000/api/plan
 ```
 
+For voice, send the recording as `audio` instead of `text`. In the extension, record with
+`MediaRecorder` and send what it produces (Chrome records WebM): the server will accept it,
+so don't convert it. The `transcript` in the response is what the server heard, so show it
+to the user. If voice isn't set up on the server, the response is a 503.
+
 Response:
 
 ```json
@@ -301,7 +306,7 @@ Every error body is `{"detail": "a message you can show the user"}`.
 | 400 | The request isn't shopping, can't fit its budget, or has missing inputs |
 | 422 | The JSON doesn't match the shapes above (`detail` says which field) |
 | 502 | Claude or the Amazon search failed: offer a retry |
-| 503 | Voice was sent, but voice isn't set up on the server |
+| 503 | Voice was sent, but voice isn't set up on the server: ask the user to type instead |
 
 ## Notes for the extension
 
@@ -320,7 +325,11 @@ so check them on a live page:
 
 **Calling the server.** Call `http://127.0.0.1:8000/api/...` from the side panel or the service
 worker, not from the content script, because content scripts run as amazon.com and hit CORS.
-Add `"http://127.0.0.1:8000/*"` to `host_permissions` in `manifest.json`.
+The permission for this (`host_permissions`) is already set in `extension/wxt.config.ts`.
+
+**Recording voice.** Chrome may not show the microphone permission prompt inside a side
+panel, so check this early. The usual workaround is to open a small extension page in a tab
+once, ask for the microphone there, and after that the side panel can record.
 
 **The website** calls `fetch('/api/...')`. The Vite dev server forwards those calls to the
 server (see the README).
