@@ -7,6 +7,11 @@ export type EvaluationState =
   | { status: 'done'; evaluation: Evaluation }
   | { status: 'error'; message: string };
 
+// What the product is checked against: everything else, not itself and not what it would replace
+export function otherParts(setup: SetupEntry[], category: string | undefined, asin: string): SetupEntry[] {
+  return setup.filter((entry) => entry.category !== category && entry.product.asin !== asin);
+}
+
 // Scores the product as soon as the page opens, and again when the part or the shortlist changes
 export function useEvaluation(
   product: Product,
@@ -15,10 +20,7 @@ export function useEvaluation(
   setup: SetupEntry[],
 ): EvaluationState {
   const [state, setState] = useState<EvaluationState>({ status: 'loading' });
-  // Check against everything else: not this product, and not what it would replace
-  const others = setup.filter(
-    (entry) => entry.category !== part?.category && entry.product.asin !== product.asin,
-  );
+  const others = otherParts(setup, part?.category, product.asin);
   const othersKey = others.map((entry) => entry.product.asin).join();
 
   useEffect(() => {
