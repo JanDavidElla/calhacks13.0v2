@@ -27,6 +27,7 @@ class FakeApify:
     def __init__(self, runs: list[list[dict[str, Any]] | None]) -> None:
         self.runs = runs
         self.searched: list[list[str]] = []
+        self.with_details: list[bool] = []
         self.items: list[dict[str, Any]] = []
 
     def actor(self, actor_id: str) -> "FakeApify":
@@ -34,6 +35,7 @@ class FakeApify:
 
     async def call(self, run_input: dict[str, Any], **kwargs: Any) -> SimpleNamespace | None:
         self.searched.append([u["url"] for u in run_input["categoryOrProductUrls"]])
+        self.with_details.append(run_input["scrapeProductDetails"])
         items = self.runs.pop(0)
         if items is None:
             return None
@@ -72,8 +74,33 @@ def test_to_product_maps_fields_and_builds_amazon_link() -> None:
         "url": "https://www.amazon.com/dp/B0TEST",
         "image": "https://img.example/B0TEST.jpg",
         "stars": 4.5,
-        "details": None,  # search results never include page details
+        "details": None,  # a search run without details
     }
+
+
+def test_to_product_reads_bullets_then_the_spec_table() -> None:
+    item = apify_item(
+        "B0TEST", "url",
+        features=["6 cores, 12 threads", "DDR5 support"],
+        attributes=[{"key": "Processor Socket", "value": "Socket AM5"}, {"key": "Wattage", "value": ""}],
+    )
+
+    product = to_product(item)
+
+    assert product is not None
+    assert product.details == "6 cores, 12 threads\nDDR5 support\nProcessor Socket: Socket AM5"
+
+
+def test_to_product_caps_details_like_a_product_page() -> None:
+    product = to_product(apify_item("B0TEST", "url", features=["x" * 5000]))
+
+    assert product is not None and product.details == "x" * amazon.DETAILS_MAX_CHARS
+
+
+def test_to_product_leaves_out_empty_details() -> None:
+    product = to_product(apify_item("B0TEST", "url", features=[], attributes=[]))
+
+    assert product is not None and product.details is None
 
 
 @pytest.mark.parametrize(
@@ -109,6 +136,7 @@ async def test_search_parts_groups_results_by_category_in_one_run(monkeypatch: p
     results = await search_parts([CPU, GPU])
 
     assert fake.searched == [[cpu_url, gpu_url]]
+    assert fake.with_details == [False]  # /api/build stays fast
     assert [p.asin for p in results["CPU"]] == ["CPU1", "CPU2"]
     assert [p.asin for p in results["GPU"]] == ["GPU1"]
 
@@ -125,6 +153,17 @@ async def test_search_parts_retries_only_empty_searches_once(monkeypatch: pytest
 
     assert fake.searched == [[cpu_url, gpu_url], [gpu_url]]
     assert [p.asin for p in results["GPU"]] == ["GPU1"]
+
+
+@pytest.mark.anyio
+async def test_search_parts_with_details_retries_with_details_too(monkeypatch: pytest.MonkeyPatch) -> None:
+    cpu_url = search_url("ryzen 5", 100)
+    fake = use_fake_apify(monkeypatch, [[], [apify_item("CPU1", cpu_url, features=["Socket AM5"])]])
+
+    results = await search_parts([CPU], details=True)
+
+    assert fake.with_details == [True, True]
+    assert results["CPU"][0].details == "Socket AM5"
 
 
 @pytest.mark.anyio

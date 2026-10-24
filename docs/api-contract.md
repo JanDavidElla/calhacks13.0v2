@@ -52,7 +52,8 @@ call `/api/alternatives` without a `product` to list the best-scoring options to
 ```
 
 `image`, `stars`, and `details` can be `null`. `details` is the page's bullet points and spec
-table as plain text, at most 4,000 characters. Search results never include it.
+table as plain text, at most 4,000 characters. The products in `/api/alternatives` include
+it, read from their Amazon listings, so an alternative the user adds carries its specs too.
 
 **Setup entry**: one product the user added, and which checklist part it fills.
 
@@ -335,8 +336,9 @@ would come back as "better". When the evaluate score is in, hide any alternative
 `score` isn't above it, and treat an empty result as "already the best fit".
 
 Expected time: the slowest call, because it runs an Amazon search and then a Claude call.
-Expect about 15–25 seconds (17 in testing: 7 for the search, 11 for Claude). Start it at the same time as `/api/evaluate`, and
-show the score first.
+Expect about 15–30 seconds: 18 for CPUs in testing (11 for the search, 8 for Claude), and 31
+for a case judged against two parts. Start it at the same time as `/api/evaluate`, and show
+the score first.
 
 ### Fixing the other part
 

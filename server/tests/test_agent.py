@@ -436,12 +436,12 @@ def judged(mismatches: tuple[str, ...] = (), **results: Fit) -> CandidateVerdict
 ALL_JUDGED = judged(R7700="fits", I5="conflict", R7600="fits", R5600="conflict", CHEAP="fits")
 
 
-def use_search(monkeypatch: pytest.MonkeyPatch, found: list[Product]) -> list[list[PartPlan]]:
-    """Make every Amazon search find these products, and record each search."""
-    calls: list[list[PartPlan]] = []
+def use_search(monkeypatch: pytest.MonkeyPatch, found: list[Product]) -> list[tuple[list[PartPlan], bool]]:
+    """Make every Amazon search find these products, and record each search and whether it had details."""
+    calls: list[tuple[list[PartPlan], bool]] = []
 
-    async def fake_search(parts: list[PartPlan]) -> dict[str, list[Product]]:
-        calls.append(parts)
+    async def fake_search(parts: list[PartPlan], details: bool = False) -> dict[str, list[Product]]:
+        calls.append((parts, details))
         return {part.category: found for part in parts}
 
     monkeypatch.setattr(agent, "search_parts", fake_search)
@@ -457,7 +457,8 @@ async def test_find_alternatives_returns_the_top_three_that_beat_the_product(mon
 
     result = await find_alternatives(request, timings)
 
-    assert searches == [[request]]
+    # With details, so candidates are judged on their spec tables like the product page
+    assert searches == [([request], True)]
     assert [(a.product.asin, a.score, a.price_difference) for a in result.alternatives] == [
         ("R7600", 100, -50.99),  # ties go to the cheaper option
         ("R7700", 100, -44.99),

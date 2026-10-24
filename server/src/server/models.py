@@ -105,7 +105,7 @@ class Product(BaseModel):
     url: str
     image: str | None = None
     stars: float | None = None
-    # Bullet points and spec table text; only product pages have them, search results don't
+    # Bullet points and spec table text, from a product page or a search run with details
     details: str | None = None
 
 

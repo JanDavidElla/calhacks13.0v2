@@ -273,7 +273,8 @@ async def find_alternatives(request: AlternativesRequest, timings: Timings | Non
     """
     timings = timings or Timings()
     with timings.measure("search"):
-        found = (await search_parts([request]))[request.category]
+        # With the spec table, candidates are judged on the same facts as the product page
+        found = (await search_parts([request], details=True))[request.category]
     if not found:
         raise SearchFailed("Amazon search found no results for this part. Try again.")
     beat = request.product

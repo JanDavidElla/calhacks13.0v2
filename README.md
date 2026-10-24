@@ -81,7 +81,7 @@ npm run dev
 
 The Vite dev server proxies `/api/*` to the FastAPI server, so call `fetch('/api/...')` from the website.
 
-Rehearse the demo with the demo cache. Live answers take up to 25 seconds and can change from
+Rehearse the demo with the demo cache. Live answers take up to 30 seconds and can change from
 run to run, so add `DEMO_CACHE=true` to `server/.env`, restart the server, and run through the
 demo once. Every answer to `/api/plan`, `/api/evaluate`, and `/api/alternatives` is saved in
 `server/demo-cache.json`, and the same request replays it in under a second, even after a
