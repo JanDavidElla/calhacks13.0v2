@@ -4,17 +4,28 @@ from typing import Literal
 from anthropic import AsyncAnthropic
 from pydantic import BaseModel, ValidationError
 
-from server.amazon import search_parts
+from server.amazon import search_parts, search_url
 from server.config import get_settings
 from server.models import (
+    Alternative,
+    AlternativeFits,
+    AlternativesRequest,
+    AlternativesResponse,
     BuildPart,
     BuildPicks,
     BuildPlan,
     BuildResponse,
     Compatibility,
+    EvaluateRequest,
+    Evaluation,
+    FitCheck,
+    FitChecks,
     PartChoice,
+    PlannedPart,
+    PlanResponse,
     Product,
 )
+from server.score import score_product
 from server.timing import Timings
 
 type Effort = Literal["low", "medium", "high", "xhigh", "max"]
@@ -26,6 +37,7 @@ PLAN_EFFORT: Effort = "low"
 PICK_EFFORT: Effort = "medium"
 # Each item is one Amazon search, so this also caps Apify cost per request
 MAX_ITEMS = 8
+MAX_ALTERNATIVES = 3
 
 PLAN_PROMPT = f"""You are a shopping assistant that plans what to buy on Amazon.
 Turn the user's request into a list of up to {MAX_ITEMS} distinct items.
@@ -61,9 +73,35 @@ well-reviewed products.
 CHECK_PROMPT = f"""You check whether a set of products works together.
 {COMPATIBILITY_GUIDE}"""
 
+FIT_GUIDE = """Write one check per relationship that matters between the product
+and the setup. For PCs: CPU socket vs motherboard, RAM type vs motherboard, power
+supply wattage vs CPU and graphics card, and motherboard size vs case. For other
+setups, cover whatever must fit together (connectors, mounts, sizes, platforms),
+or return no checks if nothing in the setup depends on the product (decor,
+gifts). Compare the product with the setup only, never two setup items with each
+other, and include the product's category in every check's parts, copying
+categories exactly. Use the listings' titles and details and the well-known specs
+of the named models (e.g. a graphics card's typical power draw). Choose conflict
+only for a definite conflict, and unconfirmed when neither the listings nor the
+model's known specs settle a detail that matters."""
+
+EVALUATE_PROMPT = f"""You check whether a product the user is viewing on Amazon
+works with the products already in their setup.
+{FIT_GUIDE}"""
+
+ALTERNATIVES_PROMPT = f"""You check whether each of several candidate products
+works with the products already in the user's setup. Return one entry for every
+candidate, copying its ASIN exactly, and judge each candidate as the product on
+its own.
+{FIT_GUIDE}"""
+
 
 class BuildRejected(Exception):
     """The request isn't a shopping request or its budget can't cover it."""
+
+
+class SearchFailed(Exception):
+    """Amazon returned no results for a part, even after retries."""
 
 
 def get_client() -> AsyncAnthropic:
@@ -103,16 +141,37 @@ def pick_request(request: str, budget: float, candidates: dict[str, list[Product
     return f"Request: {request}\nBudget: ${budget}\nCandidates: {candidates_json}"
 
 
+async def make_plan(client: AsyncAnthropic, request: str) -> BuildPlan:
+    """Turn the request into a shopping list of at most MAX_ITEMS items."""
+    plan = await ask_claude(client, PLAN_EFFORT, PLAN_PROMPT, request, BuildPlan)
+    if plan.rejection:
+        raise BuildRejected(plan.rejection)
+    return plan.model_copy(update={"parts": plan.parts[:MAX_ITEMS]})
+
+
+async def plan_checklist(request: str, timings: Timings | None = None) -> PlanResponse:
+    """Turn the request into the Evaluate flow's checklist, with an Amazon search link per part."""
+    timings = timings or Timings()
+    with timings.measure("plan"):
+        plan = await make_plan(get_client(), request)
+    return PlanResponse(
+        transcript=request,
+        budget=plan.budget,
+        parts=[
+            PlannedPart(**part.model_dump(), search_url=search_url(part.search_query, part.max_price))
+            for part in plan.parts
+        ],
+    )
+
+
 async def build(request: str, timings: Timings | None = None) -> BuildResponse:
     """Plan a shopping list for the request, search Amazon, and pick products."""
     timings = timings or Timings()
     client = get_client()
     with timings.measure("plan"):
-        plan = await ask_claude(client, PLAN_EFFORT, PLAN_PROMPT, request, BuildPlan)
-    if plan.rejection:
-        raise BuildRejected(plan.rejection)
+        plan = await make_plan(client, request)
     with timings.measure("search"):
-        candidates = await search_parts(plan.parts[:MAX_ITEMS])
+        candidates = await search_parts(plan.parts)
     with timings.measure("pick"):
         picks = await ask_claude(
             client, PICK_EFFORT, PICK_PROMPT, pick_request(request, plan.budget, candidates), BuildPicks
@@ -143,3 +202,90 @@ async def check_compatibility(parts: list[PartChoice], timings: Timings | None =
         return await ask_claude(
             get_client(), PICK_EFFORT, CHECK_PROMPT, f"Products: {listing}", Compatibility
         )
+
+
+def listing(category: str, product: Product) -> dict[str, str]:
+    """A product as Claude sees it to judge fit: prices and ratings are scored in code instead."""
+    return {"category": category, **product.model_dump(include={"title", "details"}, exclude_none=True)}
+
+
+def setup_listing(setup: list[PartChoice]) -> str:
+    return json.dumps([listing(part.category, part.product) for part in setup])
+
+
+def other_parts(category: str, setup: list[PartChoice]) -> list[PartChoice]:
+    # A setup item in the product's own category is the one the product would replace
+    return [part for part in setup if part.category != category]
+
+
+def checks_on(category: str, fits: list[FitCheck]) -> list[FitCheck]:
+    # Claude is told not to, but a check between two setup items says nothing about this product
+    return [fit for fit in fits if category in fit.parts]
+
+
+async def evaluate(request: EvaluateRequest, timings: Timings | None = None) -> Evaluation:
+    """Score one product against the user's setup."""
+    timings = timings or Timings()
+    setup = other_parts(request.category, request.setup)
+    fits: list[FitCheck] = []
+    # With nothing to check against, the score needs no Claude call
+    if setup:
+        product = json.dumps(listing(request.category, request.product))
+        with timings.measure("check"):
+            result = await ask_claude(
+                get_client(), PICK_EFFORT, EVALUATE_PROMPT,
+                f"Product: {product}\nSetup: {setup_listing(setup)}", FitChecks,
+            )
+        fits = checks_on(request.category, result.checks)
+    return score_product(request.category, request.product, fits, request.max_price)
+
+
+async def find_alternatives(request: AlternativesRequest, timings: Timings | None = None) -> AlternativesResponse:
+    """Search Amazon for the part and return the options that score highest against the setup.
+
+    With a product to beat, only options that score higher than it come back.
+    """
+    timings = timings or Timings()
+    with timings.measure("search"):
+        found = (await search_parts([request]))[request.category]
+    if not found:
+        raise SearchFailed("Amazon search found no results for this part. Try again.")
+    beat = request.product
+    # Keyed by ASIN, which also drops repeated results and the product to beat
+    candidates = {p.asin: p for p in found if beat is None or p.asin != beat.asin}
+
+    fits: dict[str, list[FitCheck]] = {}
+    setup = other_parts(request.category, request.setup)
+    if setup and candidates:
+        # The product to beat is judged in the same call, so it's held to the same standard
+        judged = [*candidates.values(), *([beat] if beat else [])]
+        listings = [p.model_dump(include={"asin", "title", "details"}, exclude_none=True) for p in judged]
+        with timings.measure("check"):
+            result = await ask_claude(
+                get_client(), PICK_EFFORT, ALTERNATIVES_PROMPT,
+                f"Category: {request.category}\nCandidates: {json.dumps(listings)}\n"
+                f"Setup: {setup_listing(setup)}",
+                AlternativeFits,
+            )
+        fits = {c.asin: checks_on(request.category, c.checks) for c in result.candidates}
+        # How a candidate Claude left out fits is unknown, so it isn't offered. If Claude
+        # left out the product to beat, it gets no compatibility checks, which only raises the bar
+        candidates = {asin: p for asin, p in candidates.items() if asin in fits}
+
+    def score(product: Product) -> Evaluation:
+        return score_product(request.category, product, fits.get(product.asin, []), request.max_price)
+
+    bar = score(beat).score if beat else None
+    scored = [(product, score(product)) for product in candidates.values()]
+    alternatives = [
+        Alternative(
+            product=product,
+            score=evaluation.score,
+            checks=evaluation.checks,
+            price_difference=round(product.price - beat.price, 2) if beat else None,
+        )
+        for product, evaluation in scored
+        if bar is None or evaluation.score > bar
+    ]
+    alternatives.sort(key=lambda a: (-a.score, a.product.price))
+    return AlternativesResponse(alternatives=alternatives[:MAX_ALTERNATIVES])

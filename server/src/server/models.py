@@ -64,6 +64,19 @@ class FitCheck(BaseModel):
     )
 
 
+class FitChecks(BaseModel):
+    checks: list[FitCheck]
+
+
+class CandidateFits(BaseModel):
+    asin: str = Field(description="ASIN of the candidate, copied exactly")
+    checks: list[FitCheck]
+
+
+class AlternativeFits(BaseModel):
+    candidates: list[CandidateFits] = Field(description="One entry per candidate")
+
+
 # Amazon product data, from Apify search results or a product page the extension reads
 
 
