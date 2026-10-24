@@ -180,7 +180,11 @@ function ProductFit({ product, plan, setup }: ProductFitProps) {
   const checks = state.status === 'done' ? state.evaluation.checks : [];
   const pros = checks.filter((check) => check.status === 'pass');
   const cons = checks.filter((check) => check.status === 'fail');
-  const missing = checks.filter((check) => check.status === 'warn');
+  // A warning on match or compatibility means the listing doesn't confirm a spec. On budget
+  // or reviews it means a little over budget or a middling rating, so it gets its own box
+  const warnings = checks.filter((check) => check.status === 'warn');
+  const missing = warnings.filter((check) => check.kind === 'match' || check.kind === 'compatibility');
+  const worthChecking = warnings.filter((check) => !missing.includes(check));
   const shortlisted = setup.some((entry) => entry.product.asin === product.asin);
 
   return (
@@ -207,6 +211,9 @@ function ProductFit({ product, plan, setup }: ProductFitProps) {
             title={`Missing spec · ${missing.length} unverified`}
             detail={reasons(missing)}
           />
+        )}
+        {worthChecking.length > 0 && (
+          <Disclosure tone="warn" title="Worth checking" detail={reasons(worthChecking)} />
         )}
       </div>
       <Alternatives state={alternatives} />
