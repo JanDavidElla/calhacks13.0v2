@@ -8,7 +8,8 @@ ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=ENV_FILE)
+    # Ignore keys the server doesn't use yet (e.g. CARTESIA_API_KEY), so they can't stop it starting
+    model_config = SettingsConfigDict(env_file=ENV_FILE, extra="ignore")
 
     anthropic_api_key: str
     apify_api_token: str

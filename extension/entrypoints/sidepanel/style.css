@@ -389,3 +389,65 @@ button {
   color: #8a4a1f;
   font-weight: 600;
 }
+
+.score-card label {
+  display: block;
+}
+
+.score-card select {
+  border: 1px solid #d8c7a8;
+  border-radius: 6px;
+  background: #fffcf6;
+  color: inherit;
+  font: inherit;
+}
+
+.plan-link:disabled {
+  color: #45634d;
+  cursor: default;
+}
+
+.empty-state a {
+  color: #8a4a1f;
+}
+
+.request-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.request-form textarea {
+  padding: 10px 12px;
+  border: 1px solid #d8c7a8;
+  border-radius: 8px;
+  background: #fffcf6;
+  color: inherit;
+  font: inherit;
+  font-weight: 400;
+  resize: vertical;
+}
+
+.primary-button {
+  padding: 12px;
+  border-radius: 8px;
+  background: #2a2117;
+  color: #fffcf6;
+  font-weight: 600;
+}
+
+.primary-button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.error-message {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #d9b7ae;
+  border-radius: 8px;
+  background: #f4ded6;
+  color: #a85d46;
+  font-weight: 400;
+}

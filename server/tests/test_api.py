@@ -8,9 +8,24 @@ from apify_client.errors import ApifyApiError
 from fastapi.testclient import TestClient
 
 import server.main as main
-from server.agent import BuildRejected
+from server.agent import BuildRejected, InvalidResponse, SearchFailed
 from server.main import app
-from server.models import BuildPart, BuildResponse, Compatibility, CompatibilityCheck, PartChoice, Product
+from server.models import (
+    Alternative,
+    AlternativesRequest,
+    AlternativesResponse,
+    BuildPart,
+    BuildResponse,
+    Compatibility,
+    CompatibilityCheck,
+    EvaluateRequest,
+    Evaluation,
+    PartChoice,
+    PlannedPart,
+    PlanResponse,
+    Product,
+    ScoreCheck,
+)
 from server.stt import UnreadableAudio, VoiceUnavailable
 from server.timing import Timings
 
@@ -250,3 +265,193 @@ def test_compatibility_claude_failure_returns_502(monkeypatch: pytest.MonkeyPatc
 
     assert response.status_code == 502
     assert response.json() == {"detail": "Claude request failed: Service unavailable"}
+
+
+PLANNED = PlanResponse(
+    transcript="I want a $300 PC.",
+    budget=300,
+    budget_estimated=False,
+    parts=[PlannedPart(category="CPU", search_query="ryzen 5", max_price=150,
+                       search_url="https://www.amazon.com/s?k=ryzen+5&rh=p_36%3A-22500")],
+)
+
+
+@pytest.fixture
+def plans(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    """Replace planning with an instant fake and record each request it receives."""
+    requests: list[str] = []
+
+    async def fake_plan(request: str, timings: Timings) -> PlanResponse:
+        requests.append(request)
+        with timings.measure("plan"):
+            pass
+        return PLANNED.model_copy(update={"transcript": request})
+
+    monkeypatch.setattr(main, "plan_checklist", fake_plan)
+    return requests
+
+
+def test_plan_returns_the_checklist_in_documented_format(plans: list[str]) -> None:
+    response = client.post("/api/plan", data={"text": "  I want a $300 PC.  "})
+
+    assert response.status_code == 200
+    assert response.json() == PLANNED.model_dump()
+    assert plans == ["I want a $300 PC."]
+    assert server_timing_stages(response) == ["plan", "total"]
+
+
+def test_plan_accepts_voice(plans: list[str], transcripts: list[tuple[bytes, str]]) -> None:
+    response = client.post("/api/plan", files={"audio": AUDIO})
+
+    assert response.status_code == 200
+    assert response.json()["transcript"] == "I want a $300 PC."
+    assert server_timing_stages(response) == ["stt", "plan", "total"]
+
+
+def test_plan_requires_exactly_one_input(plans: list[str]) -> None:
+    response = client.post("/api/plan", data={"text": "a PC"}, files={"audio": AUDIO})
+
+    assert response.status_code == 400
+    assert plans == []
+
+
+def test_too_broad_plan_returns_400_with_the_question(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def asks(request: str, timings: Timings) -> PlanResponse:
+        raise BuildRejected("Which room are you shopping for?")
+
+    monkeypatch.setattr(main, "plan_checklist", asks)
+
+    response = client.post("/api/plan", data={"text": "Stuff for my house"})
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Which room are you shopping for?"}
+
+
+CPU = Product(asin="B0CPU00001", title="Intel Core i5-13600K", price=219.99, url="https://www.amazon.com/dp/B0CPU00001")
+BOARD = Product(asin="B0MOBO0001", title="MSI MAG B650 TOMAHAWK", price=179.99,
+                url="https://www.amazon.com/dp/B0MOBO0001")
+EVALUATE_BODY = {
+    "request": "a gaming PC for $600",
+    "category": "CPU",
+    "product": CPU.model_dump(),
+    "setup": [{"category": "Motherboard", "product": BOARD.model_dump()}],
+    "max_price": 180,
+}
+EVALUATION = Evaluation(score=50, checks=[
+    ScoreCheck(kind="compatibility", status="fail", parts=["CPU", "Motherboard"], reason="Socket mismatch.",
+               points=-40),
+    ScoreCheck(kind="budget", status="warn", parts=["CPU"], reason="$39.99 over.", points=-10),
+])
+
+
+def test_evaluate_returns_the_score_in_documented_format(monkeypatch: pytest.MonkeyPatch) -> None:
+    received: list[EvaluateRequest] = []
+
+    async def fake_evaluate(request: EvaluateRequest, timings: Timings) -> Evaluation:
+        received.append(request)
+        with timings.measure("check"):
+            pass
+        return EVALUATION
+
+    monkeypatch.setattr(main, "evaluate", fake_evaluate)
+
+    response = client.post("/api/evaluate", json=EVALUATE_BODY)
+
+    assert response.status_code == 200
+    assert response.json() == EVALUATION.model_dump()
+    assert received[0].request == "a gaming PC for $600"
+    assert [(p.category, p.product.asin) for p in received[0].setup] == [("Motherboard", "B0MOBO0001")]
+    assert server_timing_stages(response) == ["check", "total"]
+
+
+def test_evaluate_needs_only_category_and_product(monkeypatch: pytest.MonkeyPatch) -> None:
+    received: list[EvaluateRequest] = []
+
+    async def fake_evaluate(request: EvaluateRequest, timings: Timings) -> Evaluation:
+        received.append(request)
+        return EVALUATION
+
+    monkeypatch.setattr(main, "evaluate", fake_evaluate)
+
+    response = client.post("/api/evaluate", json={"category": "CPU", "product": CPU.model_dump()})
+
+    assert response.status_code == 200
+    assert (received[0].request, received[0].setup, received[0].max_price) == (None, [], None)
+
+
+def test_evaluate_rejects_malformed_products() -> None:
+    response = client.post("/api/evaluate", json={"category": "CPU", "product": {"title": "No price"}})
+
+    assert response.status_code == 422
+
+
+ALTERNATIVES_BODY = {
+    "request": "a gaming PC for $600",
+    "category": "CPU",
+    "search_query": "AMD Ryzen 5 7600 processor",
+    "max_price": 180,
+    "setup": EVALUATE_BODY["setup"],
+    "product": CPU.model_dump(),
+}
+
+
+def test_alternatives_returns_options_in_documented_format(monkeypatch: pytest.MonkeyPatch) -> None:
+    ryzen = Product(asin="B0CPU00002", title="AMD Ryzen 5 7600", price=169.0, url="https://www.amazon.com/dp/B0CPU00002")
+    found = AlternativesResponse(alternatives=[
+        Alternative(product=ryzen, score=100, checks=[], price_difference=-50.99),
+    ])
+    received: list[AlternativesRequest] = []
+
+    async def fake_alternatives(request: AlternativesRequest, timings: Timings) -> AlternativesResponse:
+        received.append(request)
+        with timings.measure("search"):
+            pass
+        with timings.measure("check"):
+            pass
+        return found
+
+    monkeypatch.setattr(main, "find_alternatives", fake_alternatives)
+
+    response = client.post("/api/alternatives", json=ALTERNATIVES_BODY)
+
+    assert response.status_code == 200
+    assert response.json() == found.model_dump()
+    assert received[0].product is not None and received[0].product.asin == "B0CPU00001"
+    assert server_timing_stages(response) == ["search", "check", "total"]
+
+
+@pytest.mark.parametrize(
+    ("endpoint", "agent_function", "body"),
+    [("/api/evaluate", "evaluate", EVALUATE_BODY), ("/api/alternatives", "find_alternatives", ALTERNATIVES_BODY)],
+    ids=["evaluate", "alternatives"],
+)
+@pytest.mark.parametrize(
+    ("error", "detail"),
+    [
+        (
+            APIError("Overloaded", httpx.Request("POST", "https://api.anthropic.com/v1/messages"), body=None),  # type: ignore[arg-type]
+            "Claude request failed: Overloaded",
+        ),
+        (InvalidResponse("Claude did not return a valid response"), "Claude did not return a valid response"),
+        (
+            ApifyApiError(httpx.Response(402, json={"error": {"message": "Monthly usage hard limit exceeded"}}), 1),  # type: ignore[arg-type]
+            "Amazon search failed: Monthly usage hard limit exceeded",
+        ),
+        (SearchFailed("Amazon search found no results for this part. Try again."),
+         "Amazon search found no results for this part. Try again."),
+    ],
+    ids=["claude", "invalid-reply", "apify", "no-results"],
+)
+def test_evaluate_flow_failures_return_502(
+    monkeypatch: pytest.MonkeyPatch, endpoint: str, agent_function: str, body: dict[str, Any],
+    error: Exception, detail: str,
+) -> None:
+    async def fails(request: Any, timings: Timings) -> Any:
+        raise error
+
+    monkeypatch.setattr(main, agent_function, fails)
+
+    response = client.post(endpoint, json=body)
+
+    assert response.status_code == 502
+    assert response.json() == {"detail": detail}

@@ -13,9 +13,13 @@ class PartPlan(BaseModel):
 
 class BuildPlan(BaseModel):
     rejection: str | None = Field(
-        description="Why the request can't be fulfilled, written for the user; null if it can"
+        description="Why the request can't be fulfilled, or one question that narrows a request "
+        "too broad to plan, written for the user; null if it can be planned"
     )
-    budget: float = Field(description="Total budget in USD stated by the user")
+    budget: float = Field(
+        description="Total budget in USD: the one the user stated, or a typical one for the request"
+    )
+    budget_estimated: bool = Field(description="True if the user didn't state a budget")
     parts: list[PartPlan]
 
 
@@ -43,6 +47,52 @@ class BuildPicks(BaseModel):
     picks: list[PartPick]
     summary: str = Field(description="Two sentences describing the overall selection")
     compatibility: Compatibility
+
+
+# Plain aliases, not `type`: a `type` alias becomes a $ref in the schema, which drops the
+# field descriptions below that tell Claude what each value means
+Match = Literal["matches", "unconfirmed", "mismatch"]
+Fit = Literal["fits", "conflict", "unconfirmed"]
+
+
+class MatchCheck(BaseModel):
+    """Claude's verdict on whether a product is what the part and the request call for."""
+
+    result: Match = Field(
+        description="matches: the right kind of product for the part, and it meets every need "
+        "the request states; unconfirmed: the listing doesn't confirm a stated need; mismatch: "
+        "the wrong kind of product (e.g. an accessory), or it clearly misses a stated need"
+    )
+    reason: str = Field(description="One sentence on why, naming the need when one decides it")
+
+
+class FitCheck(BaseModel):
+    """Claude's verdict on one pair of parts; server.score turns it into a scored check."""
+
+    parts: list[str] = Field(description="Categories of the two parts this check covers")
+    result: Fit = Field(
+        description="fits: they work together; conflict: a definite conflict; unconfirmed: "
+        "the listings don't confirm a detail that decides whether they work together"
+    )
+    reason: str = Field(
+        description="One sentence on why they work together, the conflict, or which detail "
+        "the listings don't confirm"
+    )
+
+
+class Verdict(BaseModel):
+    match: MatchCheck
+    checks: list[FitCheck] = Field(description="Compatibility checks against the setup")
+
+
+class CandidateVerdict(BaseModel):
+    asin: str = Field(description="ASIN of the candidate, copied exactly")
+    match: MatchCheck
+    checks: list[FitCheck] = Field(description="Compatibility checks against the setup")
+
+
+class CandidateVerdicts(BaseModel):
+    candidates: list[CandidateVerdict] = Field(description="One entry per candidate")
 
 
 # Amazon product data, from Apify search results or a product page the extension reads
@@ -96,10 +146,11 @@ class PlannedPart(PartPlan):
 class PlanResponse(BaseModel):
     transcript: str
     budget: float
+    budget_estimated: bool  # the request stated no budget, so Claude chose a typical one
     parts: list[PlannedPart]
 
 
-type CheckKind = Literal["compatibility", "budget", "reviews"]
+type CheckKind = Literal["match", "compatibility", "budget", "reviews"]
 type CheckStatus = Literal["pass", "warn", "fail"]
 
 
@@ -117,6 +168,7 @@ class Evaluation(BaseModel):
 
 
 class EvaluateRequest(BaseModel):
+    request: str | None = None  # the plan's transcript: its stated needs are part of the match check
     category: str
     product: Product
     setup: list[PartChoice] = []
@@ -124,6 +176,7 @@ class EvaluateRequest(BaseModel):
 
 
 class AlternativesRequest(PartPlan):
+    request: str | None = None  # the plan's transcript: its stated needs are part of the match check
     setup: list[PartChoice] = []
     product: Product | None = None  # the product to beat; without it, returns the best options
 
