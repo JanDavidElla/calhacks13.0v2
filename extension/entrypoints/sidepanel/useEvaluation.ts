@@ -7,24 +7,6 @@ export type EvaluationState =
   | { status: 'done'; evaluation: Evaluation }
   | { status: 'error'; message: string };
 
-function words(text: string): string[] {
-  return text.toLowerCase().match(/[a-z0-9]{3,}/g) ?? [];
-}
-
-// The part whose name and search terms share the most words with the title
-export function guessCategory(title: string, parts: PlannedPart[]): string {
-  const titleWords = new Set(words(title));
-  let best = parts[0];
-  let bestScore = 0;
-  for (const part of parts) {
-    const score = words(`${part.category} ${part.search_query}`).filter((word) =>
-      titleWords.has(word),
-    ).length;
-    if (score > bestScore) [best, bestScore] = [part, score];
-  }
-  return best?.category ?? '';
-}
-
 // Scores the product as soon as the page opens, and again when the part or the shortlist changes
 export function useEvaluation(
   product: Product,
@@ -52,7 +34,7 @@ export function useEvaluation(
     };
     // Keys instead of objects: re-reading the page or the shortlist makes new objects for the
     // same product, which shouldn't cost another call
-  }, [product.asin, request, part?.category, part?.max_price, othersKey]);
+  }, [product.asin, product.title, product.price, request, part?.category, part?.max_price, othersKey]);
 
   return state;
 }

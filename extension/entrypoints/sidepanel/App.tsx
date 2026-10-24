@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import type { Check, Plan, PlannedPart, SetupEntry } from '@/utils/api';
-import { GET_PRODUCT, type Product } from '@/utils/page';
-import { planItem, setupItem, useStoredItem } from '@/utils/storage';
+import { GET_PRODUCT, PRODUCT_FOUND, type Product, type ProductFoundMessage } from '@/utils/page';
+import { guessCategory } from '@/utils/category';
+import { addToShortlist, planItem, setupItem } from '@/utils/storage';
+import CartStatus from './CartStatus';
 import RequestForm from './RequestForm';
-import { guessCategory, useEvaluation, type EvaluationState } from './useEvaluation';
+import { useEvaluation, type EvaluationState } from './useEvaluation';
+import { useStoredItem } from './useStoredItem';
 
 type PageState =
   | { status: 'loading' }
@@ -129,12 +132,6 @@ function ProductFit({ product, plan, setup }: ProductFitProps) {
   const missing = checks.filter((check) => check.status === 'warn');
   const shortlisted = setup.some((entry) => entry.product.asin === product.asin);
 
-  async function addToShortlist() {
-    // One product per part: adding replaces what filled this part before
-    const others = setup.filter((entry) => entry.category !== category);
-    await setupItem.setValue([...others, { category, product }]);
-  }
-
   return (
     <div className="fit-card">
       <ScoreCard
@@ -161,7 +158,7 @@ function ProductFit({ product, plan, setup }: ProductFitProps) {
           />
         )}
       </div>
-      <button className="plan-link" onClick={() => void addToShortlist()} disabled={shortlisted}>
+      <button className="plan-link" onClick={() => void addToShortlist(category, product)} disabled={shortlisted}>
         {shortlisted ? '✓ On your shortlist' : `Add to shortlist as ${category}`}
       </button>
     </div>
@@ -203,18 +200,44 @@ function App() {
   const setup = useStoredItem(setupItem) ?? [];
 
   useEffect(() => {
+    // This panel's window: messages and tab events from other windows are ignored
+    let windowId: number | undefined;
+    void browser.windows.getCurrent().then((window) => (windowId = window.id));
+
     const refresh = async () => {
       const product = await readActiveTab();
       setPage(product ? { status: 'product', product } : { status: 'none' });
     };
-    const onUpdated = (_tabId: number, change: { status?: string }) => {
+    const isShownTab = (tab?: { active: boolean; windowId: number }) =>
+      tab?.active === true && tab.windowId === windowId;
+    // The content script sends the product as soon as it can read it, so the analysis starts
+    // before the page has finished loading
+    const onMessage = (
+      message: Partial<ProductFoundMessage>,
+      sender: { tab?: { active: boolean; windowId: number } },
+    ) => {
+      if (message.type === PRODUCT_FOUND && message.product && isShownTab(sender.tab)) {
+        setPage({ status: 'product', product: message.product });
+      }
+    };
+    const onUpdated = (
+      _tabId: number,
+      change: { status?: string },
+      tab: { active: boolean; windowId: number },
+    ) => {
+      if (!isShownTab(tab)) return;
+      // Drop the old product's score at once, instead of showing it for the new page
+      if (change.status === 'loading') setPage({ status: 'loading' });
+      // A fallback for pages whose content script didn't send anything, like non-product pages
       if (change.status === 'complete') void refresh();
     };
 
     void refresh();
+    browser.runtime.onMessage.addListener(onMessage);
     browser.tabs.onActivated.addListener(refresh);
     browser.tabs.onUpdated.addListener(onUpdated);
     return () => {
+      browser.runtime.onMessage.removeListener(onMessage);
       browser.tabs.onActivated.removeListener(refresh);
       browser.tabs.onUpdated.removeListener(onUpdated);
     };
@@ -286,9 +309,16 @@ function App() {
         {plan === null || editing ? (
           <RequestForm initialText={plan?.transcript ?? ''} onDone={() => setEditing(false)} />
         ) : !plan ? null : tab === 'shortlist' ? (
-          <Shortlist plan={plan} setup={setup} />
+          <>
+            <Shortlist plan={plan} setup={setup} />
+            <CartStatus setup={setup} />
+          </>
         ) : product ? (
           <ProductFit key={product.asin} product={product} plan={plan} setup={setup} />
+        ) : page.status === 'loading' ? (
+          <div className="empty-state">
+            <strong>Reading the page…</strong>
+          </div>
         ) : (
           <div className="empty-state">
             <strong>No product open</strong>
