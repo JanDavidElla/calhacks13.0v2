@@ -39,8 +39,11 @@ export function readCartAsins(page: Document): Set<string> | null {
 }
 
 function textOf(page: Document, selector: string): string | null {
-  const text = page.querySelector(selector)?.textContent?.replace(/\s+/g, ' ').trim();
-  return text || null;
+  return clean(page.querySelector(selector)?.textContent);
+}
+
+function clean(text: string | null | undefined): string | null {
+  return text?.replace(/\s+/g, ' ').trim() || null;
 }
 
 function readPrice(page: Document): number | null {
@@ -60,10 +63,50 @@ function readStars(page: Document): number | null {
   return Number.isNaN(stars) ? null : stars;
 }
 
+// Rows that say nothing about the product itself
+const SKIPPED_ROWS = new Set([
+  'ASIN',
+  'Best Sellers Rank',
+  'Customer Reviews',
+  'Global Trade Identification Number',
+  'UPC',
+]);
+
 function readDetails(page: Document): string | null {
-  const parts = [
-    textOf(page, '#feature-bullets'),
-    textOf(page, '#productDetails_techSpec_section_1') ?? textOf(page, '#prodDetails'),
-  ].filter((part) => part !== null);
-  return parts.length > 0 ? parts.join('\n').slice(0, MAX_DETAILS) : null;
+  const lines = [
+    ...listItems(page, '#feature-bullets li'),
+    ...tableRows(page, '#productOverview_feature_div tr, #prodDetails tr'),
+    // Pages without a spec table list their details as bullets instead
+    ...listItems(page, '#detailBullets_feature_div li'),
+  ];
+  // The overview repeats rows from the spec table
+  const unique = [...new Set(lines)];
+  return unique.length > 0 ? unique.join('\n').slice(0, MAX_DETAILS) : null;
+}
+
+function listItems(page: Document, selector: string): string[] {
+  return [...page.querySelectorAll(selector)]
+    .map(readableText)
+    .filter((text) => text !== null);
+}
+
+// "Label: value" per row. Read row by row because the section's text also holds a
+// feedback form's <style>, which would fill MAX_DETAILS before the later rows
+function tableRows(page: Document, selector: string): string[] {
+  const rows: string[] = [];
+  for (const row of page.querySelectorAll(selector)) {
+    const cells = [...row.querySelectorAll('th, td')].map(readableText);
+    const [label, value] = cells;
+    if (cells.length === 2 && label && value && !SKIPPED_ROWS.has(label)) {
+      rows.push(`${label}: ${value}`);
+    }
+  }
+  return rows;
+}
+
+// The element's text without the inline <script> and <style> some cells hold
+function readableText(element: Element): string | null {
+  const copy = element.cloneNode(true) as Element;
+  for (const code of copy.querySelectorAll('script, style')) code.remove();
+  return clean(copy.textContent);
 }
