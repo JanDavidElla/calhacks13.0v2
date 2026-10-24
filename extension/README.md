@@ -20,8 +20,10 @@ To use your normal Chrome instead, run `npm run build`, open `chrome://extension
 Developer mode, click **Load unpacked**, and pick `extension/.output/chrome-mv3`. After each
 rebuild, click the reload icon on the extension's card.
 
-Click the extension's toolbar icon to open the side panel. On an Amazon product page, it
-shows the product's title.
+Click the extension's toolbar icon to open the side panel. The panel includes the current
+project header, product and shortlist tabs, a fit score with expandable pros, cons, and
+missing-spec explanations, and a setup budget summary. On an Amazon product page, it also
+shows the product's title and ASIN; outside a product page, it prompts you to open one.
 
 ## Where things are
 

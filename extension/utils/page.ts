@@ -2,8 +2,13 @@
 
 export const GET_PRODUCT = 'getProduct';
 
-// Grows into the contract's Product (docs/api-contract.md) as more fields are read
-export type PageProduct = {
+// The contract's Product (docs/api-contract.md)
+export type Product = {
   asin: string;
   title: string;
+  price: number;
+  url: string;
+  image: string | null;
+  stars: number | null;
+  details: string | null;
 };
