@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.14"
 dependencies = [
+    "anthropic>=2.3.0",
     "apify-client>=3.3.0",
     "fastapi>=0.162.0",
     "httpx>=0.28.1",

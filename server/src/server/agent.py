@@ -1,7 +1,8 @@
 import json
+from typing import Literal
 
-from openai import AsyncOpenAI
-from pydantic import BaseModel
+from anthropic import AsyncAnthropic
+from pydantic import BaseModel, ValidationError
 
 from server.amazon import search_parts
 from server.config import get_settings
@@ -16,11 +17,13 @@ from server.models import (
 )
 from server.timing import Timings
 
-# Per stage so each can use the model that tests best for it (see evals/compare_models.py).
-# Picked 2026-10-24: planning needs no reasoning (equal quality, ~6x faster than grok-4.7);
-# picking needs it to choose good-value parts, and 4.20 reasoning matched grok-4.7 at ~2.5x the speed.
-PLAN_MODEL = "grok-4.20-0309-non-reasoning"
-PICK_MODEL = "grok-4.20-0309-reasoning"
+type Effort = Literal["low", "medium", "high", "xhigh", "max"]
+
+MODEL = "claude-opus-5-5"
+# Effort trades speed for reasoning, per stage: planning is a simple list, while picking
+# and checking need reasoning to choose good-value parts that work together
+PLAN_EFFORT: Effort = "low"
+PICK_EFFORT: Effort = "medium"
 # Each item is one Amazon search, so this also caps Apify cost per request
 MAX_ITEMS = 8
 
@@ -63,26 +66,36 @@ class BuildRejected(Exception):
     """The request isn't a shopping request or its budget can't cover it."""
 
 
-def get_client() -> AsyncOpenAI:
-    return AsyncOpenAI(api_key=get_settings().xai_api_key, base_url="https://api.x.ai/v1")
+def get_client() -> AsyncAnthropic:
+    return AsyncAnthropic(api_key=get_settings().anthropic_api_key)
 
 
-async def ask_grok[T: BaseModel](
-    client: AsyncOpenAI, model: str, system: str, user: str, schema: type[T]
+async def ask_claude[T: BaseModel](
+    client: AsyncAnthropic, effort: Effort, system: str, user: str, schema: type[T]
 ) -> T:
-    completion = await client.chat.completions.parse(
-        model=model,
-        messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-        response_format=schema,
-    )
-    parsed = completion.choices[0].message.parsed
+    try:
+        message = await client.beta.messages.parse(
+            model=MODEL,
+            max_tokens=16000,
+            system=system,
+            messages=[{"role": "user", "content": user}],
+            output_format=schema,
+            output_config={"effort": effort},
+            # If Claude declines a request, the API retries it on a fallback model in the same call
+            betas=["server-side-fallback-2026-07-01"],
+            fallbacks="default",
+        )
+    except ValidationError as e:
+        # parse validates the text as it arrives, so a reply that isn't the schema raises here
+        raise RuntimeError("Claude did not return a valid response") from e
+    parsed = message.parsed_output
     if parsed is None:
-        raise RuntimeError("Grok did not return a valid response")
+        raise RuntimeError("Claude did not return a valid response")
     return parsed
 
 
 def pick_request(request: str, budget: float, candidates: dict[str, list[Product]]) -> str:
-    """The picking message for Grok; links and images are left out to save tokens."""
+    """The picking message for Claude; links and images are left out to save tokens."""
     candidates_json = json.dumps(
         {category: [p.model_dump(exclude={"url", "image"}) for p in products]
          for category, products in candidates.items()}
@@ -95,17 +108,17 @@ async def build(request: str, timings: Timings | None = None) -> BuildResponse:
     timings = timings or Timings()
     client = get_client()
     with timings.measure("plan"):
-        plan = await ask_grok(client, PLAN_MODEL, PLAN_PROMPT, request, BuildPlan)
+        plan = await ask_claude(client, PLAN_EFFORT, PLAN_PROMPT, request, BuildPlan)
     if plan.rejection:
         raise BuildRejected(plan.rejection)
     with timings.measure("search"):
         candidates = await search_parts(plan.parts[:MAX_ITEMS])
     with timings.measure("pick"):
-        picks = await ask_grok(
-            client, PICK_MODEL, PICK_PROMPT, pick_request(request, plan.budget, candidates), BuildPicks
+        picks = await ask_claude(
+            client, PICK_EFFORT, PICK_PROMPT, pick_request(request, plan.budget, candidates), BuildPicks
         )
 
-    # Look picks up by ASIN so prices and links come from Amazon, not from Grok
+    # Look picks up by ASIN so prices and links come from Amazon, not from Claude
     products: dict[str, Product] = {p.asin: p for ps in candidates.values() for p in ps}
     parts = [
         BuildPart(category=pick.category, product=products[pick.asin], reason=pick.reason)
@@ -127,6 +140,6 @@ async def check_compatibility(parts: list[PartChoice], timings: Timings | None =
     timings = timings or Timings()
     listing = json.dumps([{"category": p.category, "title": p.product.title} for p in parts])
     with timings.measure("check"):
-        return await ask_grok(
-            get_client(), PICK_MODEL, CHECK_PROMPT, f"Products: {listing}", Compatibility
+        return await ask_claude(
+            get_client(), PICK_EFFORT, CHECK_PROMPT, f"Products: {listing}", Compatibility
         )

@@ -5,7 +5,8 @@ import httpx
 import pytest
 
 import server.stt as stt
-from server.stt import UnreadableAudio, transcribe
+from server.config import get_settings
+from server.stt import UnreadableAudio, VoiceUnavailable, transcribe
 
 
 def fake_xai(monkeypatch: pytest.MonkeyPatch, handler: Callable[[httpx.Request], httpx.Response]) -> list[httpx.Request]:
@@ -54,4 +55,16 @@ async def test_empty_file_is_rejected_without_calling_xai(monkeypatch: pytest.Mo
 
     with pytest.raises(UnreadableAudio, match="empty"):
         await transcribe(b"", "empty.wav")
+    assert requests == []
+
+
+@pytest.mark.anyio
+async def test_missing_xai_key_raises_voice_unavailable_without_calling_xai(monkeypatch: pytest.MonkeyPatch) -> None:
+    requests = fake_xai(monkeypatch, lambda r: httpx.Response(200, json={"text": "unused"}))
+    # Blank, like the XAI_API_KEY= line copied from .env.example
+    monkeypatch.setenv("XAI_API_KEY", "")
+    get_settings.cache_clear()
+
+    with pytest.raises(VoiceUnavailable, match="isn't set up"):
+        await transcribe(b"audio-bytes", "request.wav")
     assert requests == []

@@ -12,12 +12,19 @@ class UnreadableAudio(Exception):
     """The uploaded file is empty or isn't audio xAI can decode."""
 
 
+class VoiceUnavailable(Exception):
+    """The server has no xAI key, so it can't transcribe audio."""
+
+
 async def transcribe(audio: bytes, filename: str) -> str:
     """Transcribe English speech with xAI Speech to Text."""
+    settings = get_settings()
+    # An empty XAI_API_KEY= line in .env counts as not set
+    if not settings.xai_api_key:
+        raise VoiceUnavailable("Voice input isn't set up on this server. Type your request instead.")
     if not audio:
         raise UnreadableAudio("The audio file is empty")
 
-    settings = get_settings()
     async with httpx.AsyncClient(timeout=60) as client:
         response = await client.post(
             STT_URL,

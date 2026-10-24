@@ -10,8 +10,10 @@ ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ENV_FILE)
 
-    xai_api_key: str
+    anthropic_api_key: str
     apify_api_token: str
+    # Only voice requests use xAI (speech to text), so the server runs without it
+    xai_api_key: str | None = None
 
 
 @lru_cache

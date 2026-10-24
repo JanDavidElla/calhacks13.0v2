@@ -9,7 +9,7 @@ from server.models import PartPlan, Product
 
 ACTOR_ID = "junglee/amazon-crawler"
 RESULTS_PER_SEARCH = 5
-# Search above each part's share so better options show up; Grok keeps the total in budget
+# Search above each part's share so better options show up; Claude keeps the total in budget
 PRICE_HEADROOM = 1.5
 # Amazon randomly serves empty results pages to scrapers (10-37% of searches in testing),
 # so empty searches are re-run; each retry only charges for the results it finds

@@ -1,13 +1,13 @@
 from typing import Annotated
 
 import httpx
+from anthropic import APIError
 from apify_client.errors import ApifyApiError
 from fastapi import FastAPI, File, Form, HTTPException, Response, UploadFile
-from openai import APIError
 
 from server.agent import BuildRejected, build, check_compatibility
 from server.models import BuildResponse, Compatibility, CompatibilityRequest
-from server.stt import UnreadableAudio, transcribe
+from server.stt import UnreadableAudio, VoiceUnavailable, transcribe
 from server.timing import Timings
 
 app = FastAPI()
@@ -36,6 +36,8 @@ async def create_build(
                     text = await transcribe(await audio.read(), audio.filename or "audio")
             except UnreadableAudio as e:
                 raise HTTPException(400, str(e)) from e
+            except VoiceUnavailable as e:
+                raise HTTPException(503, str(e)) from e
             except httpx.HTTPStatusError as e:
                 raise HTTPException(502, f"Could not transcribe audio: {e.response.text}") from e
 
@@ -47,7 +49,7 @@ async def create_build(
         except BuildRejected as e:
             raise HTTPException(400, str(e)) from e
         except APIError as e:
-            raise HTTPException(502, f"Grok request failed: {e.message}") from e
+            raise HTTPException(502, f"Claude request failed: {e.message}") from e
         except ApifyApiError as e:
             raise HTTPException(502, f"Amazon search failed: {e.message}") from e
 
@@ -66,7 +68,7 @@ async def compatibility(request: CompatibilityRequest, response: Response) -> Co
     try:
         result = await check_compatibility(request.parts, timings)
     except APIError as e:
-        raise HTTPException(502, f"Grok request failed: {e.message}") from e
+        raise HTTPException(502, f"Claude request failed: {e.message}") from e
 
     response.headers["Server-Timing"] = timings.header()
     return result

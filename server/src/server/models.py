@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-# Grok structured outputs: the Field descriptions are sent to Grok as instructions
+# Claude structured outputs: the Field descriptions are sent to Claude as instructions
 
 
 class PartPlan(BaseModel):

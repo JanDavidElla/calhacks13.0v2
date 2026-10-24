@@ -6,7 +6,7 @@ import pytest
 from pydantic import BaseModel
 
 import server.agent as agent
-from server.agent import BuildRejected, ask_grok, build, check_compatibility
+from server.agent import BuildRejected, ask_claude, build, check_compatibility
 from server.models import (
     BuildPicks,
     BuildPlan,
@@ -41,8 +41,8 @@ COMPATIBLE = Compatibility(
 )
 
 
-class FakeGrok:
-    """Replaces ask_grok: returns a canned response for each schema Grok is asked for."""
+class FakeClaude:
+    """Replaces ask_claude: returns a canned response for each schema Claude is asked for."""
 
     def __init__(
         self,
@@ -56,13 +56,13 @@ class FakeGrok:
             Compatibility: compatibility,
         }
         self.prompts: list[str] = []
-        self.models: list[str] = []
+        self.efforts: list[str] = []
 
     async def __call__(
-        self, client: Any, model: str, system: str, user: str, schema: type[BaseModel]
+        self, client: Any, effort: str, system: str, user: str, schema: type[BaseModel]
     ) -> BaseModel | None:
         self.prompts.append(user)
-        self.models.append(model)
+        self.efforts.append(effort)
         return self.responses[schema]
 
 
@@ -87,16 +87,16 @@ def searches(monkeypatch: pytest.MonkeyPatch) -> list[list[PartPlan]]:
     return calls
 
 
-def use_grok(monkeypatch: pytest.MonkeyPatch, grok: FakeGrok) -> FakeGrok:
-    monkeypatch.setattr(agent, "ask_grok", grok)
-    return grok
+def use_claude(monkeypatch: pytest.MonkeyPatch, claude: FakeClaude) -> FakeClaude:
+    monkeypatch.setattr(agent, "ask_claude", claude)
+    return claude
 
 
 @pytest.mark.anyio
 async def test_build_uses_amazon_data_for_picked_products(
     monkeypatch: pytest.MonkeyPatch, searches: list[list[PartPlan]]
 ) -> None:
-    use_grok(monkeypatch, FakeGrok(PLAN, picks("CPU1", "GPU1")))
+    use_claude(monkeypatch, FakeClaude(PLAN, picks("CPU1", "GPU1")))
 
     result = await build("A $300 PC")
 
@@ -113,10 +113,10 @@ async def test_build_uses_amazon_data_for_picked_products(
 
 
 @pytest.mark.anyio
-async def test_build_drops_asins_grok_made_up(
+async def test_build_drops_asins_claude_made_up(
     monkeypatch: pytest.MonkeyPatch, searches: list[list[PartPlan]]
 ) -> None:
-    use_grok(monkeypatch, FakeGrok(PLAN, picks("CPU1", "FAKE123")))
+    use_claude(monkeypatch, FakeClaude(PLAN, picks("CPU1", "FAKE123")))
 
     result = await build("A $300 PC")
 
@@ -125,14 +125,14 @@ async def test_build_drops_asins_grok_made_up(
 
 
 @pytest.mark.anyio
-async def test_build_sends_candidates_without_links_to_grok(
+async def test_build_sends_candidates_without_links_to_claude(
     monkeypatch: pytest.MonkeyPatch, searches: list[list[PartPlan]]
 ) -> None:
-    grok = use_grok(monkeypatch, FakeGrok(PLAN, picks("CPU1")))
+    claude = use_claude(monkeypatch, FakeClaude(PLAN, picks("CPU1")))
 
     await build("A $300 PC")
 
-    plan_prompt, pick_prompt = grok.prompts
+    plan_prompt, pick_prompt = claude.prompts
     assert plan_prompt == "A $300 PC"
     assert "Budget: $300.0" in pick_prompt
     candidates = json.loads(pick_prompt.split("Candidates: ", 1)[1])
@@ -144,7 +144,7 @@ async def test_build_rejects_before_searching_amazon(
     monkeypatch: pytest.MonkeyPatch, searches: list[list[PartPlan]]
 ) -> None:
     rejected = BuildPlan(rejection="That's not a shopping request.", budget=0, parts=[])
-    use_grok(monkeypatch, FakeGrok(rejected))
+    use_claude(monkeypatch, FakeClaude(rejected))
 
     with pytest.raises(BuildRejected, match="not a shopping request"):
         await build("What's the weather?")
@@ -155,7 +155,7 @@ async def test_build_rejects_before_searching_amazon(
 async def test_build_records_stage_timings(
     monkeypatch: pytest.MonkeyPatch, searches: list[list[PartPlan]]
 ) -> None:
-    use_grok(monkeypatch, FakeGrok(PLAN, picks("CPU1")))
+    use_claude(monkeypatch, FakeClaude(PLAN, picks("CPU1")))
     timings = Timings()
 
     await build("A $300 PC", timings)
@@ -164,27 +164,58 @@ async def test_build_records_stage_timings(
     assert all(ms >= 0 for ms in timings.durations_ms.values())
 
 
-@pytest.mark.anyio
-async def test_ask_grok_raises_when_response_does_not_match_schema() -> None:
-    async def parse(**kwargs: Any) -> SimpleNamespace:
-        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(parsed=None))])
+def fake_client(parse: Any) -> Any:
+    return SimpleNamespace(beta=SimpleNamespace(messages=SimpleNamespace(parse=parse)))
 
-    client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(parse=parse)))
+
+@pytest.mark.anyio
+async def test_ask_claude_returns_parsed_output_and_sends_effort() -> None:
+    calls: list[dict[str, Any]] = []
+
+    async def parse(**kwargs: Any) -> SimpleNamespace:
+        calls.append(kwargs)
+        return SimpleNamespace(parsed_output=PLAN)
+
+    result = await ask_claude(fake_client(parse), "low", "system", "A $300 PC", BuildPlan)
+
+    assert result == PLAN
+    assert calls[0]["model"] == agent.MODEL
+    assert calls[0]["system"] == "system"
+    assert calls[0]["messages"] == [{"role": "user", "content": "A $300 PC"}]
+    assert calls[0]["output_format"] is BuildPlan
+    assert calls[0]["output_config"] == {"effort": "low"}
+
+
+@pytest.mark.anyio
+async def test_ask_claude_raises_when_there_is_no_output() -> None:
+    # e.g. Claude and every fallback model declined the request
+    async def parse(**kwargs: Any) -> SimpleNamespace:
+        return SimpleNamespace(parsed_output=None)
 
     with pytest.raises(RuntimeError, match="did not return a valid response"):
-        await ask_grok(client, "grok-test", "system", "user", BuildPlan)  # type: ignore[arg-type]
+        await ask_claude(fake_client(parse), "low", "system", "user", BuildPlan)
+
+
+@pytest.mark.anyio
+async def test_ask_claude_raises_when_response_does_not_match_schema() -> None:
+    async def parse(**kwargs: Any) -> SimpleNamespace:
+        BuildPlan.model_validate_json('{"not": "a plan"}')
+        raise AssertionError("unreachable")
+
+    with pytest.raises(RuntimeError, match="did not return a valid response"):
+        await ask_claude(fake_client(parse), "low", "system", "user", BuildPlan)
 
 
 @pytest.mark.anyio
 async def test_check_compatibility_sends_only_categories_and_titles(monkeypatch: pytest.MonkeyPatch) -> None:
-    grok = use_grok(monkeypatch, FakeGrok(compatibility=COMPATIBLE))
+    claude = use_claude(monkeypatch, FakeClaude(compatibility=COMPATIBLE))
     parts = [PartChoice(category=category, product=products[0]) for category, products in CANDIDATES.items()]
     timings = Timings()
 
     result = await check_compatibility(parts, timings)
 
     assert result == COMPATIBLE
-    assert json.loads(grok.prompts[0].removeprefix("Products: ")) == [
+    assert json.loads(claude.prompts[0].removeprefix("Products: ")) == [
         {"category": "CPU", "title": "Ryzen 5 5600"},
         {"category": "GPU", "title": "RX 6600"},
     ]
@@ -196,7 +227,7 @@ async def test_build_searches_at_most_max_items(
     monkeypatch: pytest.MonkeyPatch, searches: list[list[PartPlan]]
 ) -> None:
     many = [PartPlan(category=f"Item {i}", search_query=f"item {i}", max_price=10) for i in range(12)]
-    use_grok(monkeypatch, FakeGrok(PLAN.model_copy(update={"parts": many}), picks("CPU1")))
+    use_claude(monkeypatch, FakeClaude(PLAN.model_copy(update={"parts": many}), picks("CPU1")))
 
     await build("Decorate my whole house for Christmas, $120")
 
@@ -204,13 +235,13 @@ async def test_build_searches_at_most_max_items(
 
 
 @pytest.mark.anyio
-async def test_build_uses_the_configured_model_for_each_stage(
+async def test_build_uses_the_configured_effort_for_each_stage(
     monkeypatch: pytest.MonkeyPatch, searches: list[list[PartPlan]]
 ) -> None:
-    monkeypatch.setattr(agent, "PLAN_MODEL", "plan-model")
-    monkeypatch.setattr(agent, "PICK_MODEL", "pick-model")
-    grok = use_grok(monkeypatch, FakeGrok(PLAN, picks("CPU1")))
+    monkeypatch.setattr(agent, "PLAN_EFFORT", "plan-effort")
+    monkeypatch.setattr(agent, "PICK_EFFORT", "pick-effort")
+    claude = use_claude(monkeypatch, FakeClaude(PLAN, picks("CPU1")))
 
     await build("A $300 PC")
 
-    assert grok.models == ["plan-model", "pick-model"]
+    assert claude.efforts == ["plan-effort", "pick-effort"]

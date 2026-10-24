@@ -3,15 +3,15 @@ from typing import Any
 
 import httpx
 import pytest
+from anthropic import APIError
 from apify_client.errors import ApifyApiError
 from fastapi.testclient import TestClient
-from openai import APIError
 
 import server.main as main
 from server.agent import BuildRejected
 from server.main import app
 from server.models import BuildPart, BuildResponse, Compatibility, CompatibilityCheck, PartChoice, Product
-from server.stt import UnreadableAudio
+from server.stt import UnreadableAudio, VoiceUnavailable
 from server.timing import Timings
 
 client = TestClient(app)
@@ -135,6 +135,19 @@ def test_unreadable_audio_returns_400(monkeypatch: pytest.MonkeyPatch, builds: l
     assert builds == []
 
 
+def test_voice_without_xai_key_returns_503(monkeypatch: pytest.MonkeyPatch, builds: list[str]) -> None:
+    async def no_voice(audio: bytes, filename: str) -> str:
+        raise VoiceUnavailable("Voice input isn't set up on this server. Type your request instead.")
+
+    monkeypatch.setattr(main, "transcribe", no_voice)
+
+    response = client.post("/api/build", files={"audio": AUDIO})
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Voice input isn't set up on this server. Type your request instead."}
+    assert builds == []
+
+
 def test_transcription_failure_returns_502(monkeypatch: pytest.MonkeyPatch, builds: list[str]) -> None:
     async def stt_fails(audio: bytes, filename: str) -> str:
         request = httpx.Request("POST", "https://api.x.ai/v1/stt")
@@ -163,15 +176,15 @@ def test_rejected_request_returns_400_with_reason(monkeypatch: pytest.MonkeyPatc
     ("error", "detail"),
     [
         (
-            APIError("Rate limit reached", httpx.Request("POST", "https://api.x.ai/v1"), body=None),  # type: ignore[arg-type]
-            "Grok request failed: Rate limit reached",
+            APIError("Rate limit reached", httpx.Request("POST", "https://api.anthropic.com/v1/messages"), body=None),  # type: ignore[arg-type]
+            "Claude request failed: Rate limit reached",
         ),
         (
             ApifyApiError(httpx.Response(402, json={"error": {"message": "Monthly usage hard limit exceeded"}}), 1),  # type: ignore[arg-type]
             "Amazon search failed: Monthly usage hard limit exceeded",
         ),
     ],
-    ids=["grok", "apify"],
+    ids=["claude", "apify"],
 )
 def test_upstream_failures_return_502(monkeypatch: pytest.MonkeyPatch, error: Exception, detail: str) -> None:
     monkeypatch.setattr(main, "build", failing_build(error))
@@ -227,13 +240,13 @@ def test_compatibility_rejects_malformed_parts() -> None:
     assert response.status_code == 422
 
 
-def test_compatibility_grok_failure_returns_502(monkeypatch: pytest.MonkeyPatch) -> None:
-    async def grok_fails(parts: list[PartChoice], timings: Timings) -> Compatibility:
-        raise APIError("Service unavailable", httpx.Request("POST", "https://api.x.ai/v1"), body=None)  # type: ignore[arg-type]
+def test_compatibility_claude_failure_returns_502(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def claude_fails(parts: list[PartChoice], timings: Timings) -> Compatibility:
+        raise APIError("Service unavailable", httpx.Request("POST", "https://api.anthropic.com/v1/messages"), body=None)  # type: ignore[arg-type]
 
-    monkeypatch.setattr(main, "check_compatibility", grok_fails)
+    monkeypatch.setattr(main, "check_compatibility", claude_fails)
 
     response = client.post("/api/compatibility", json={"parts": build_parts_json()})
 
     assert response.status_code == 502
-    assert response.json() == {"detail": "Grok request failed: Service unavailable"}
+    assert response.json() == {"detail": "Claude request failed: Service unavailable"}
