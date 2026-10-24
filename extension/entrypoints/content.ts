@@ -9,6 +9,7 @@ import {
 } from '@/utils/page';
 import {
   addToShortlist,
+  cartCountItem,
   cartReportItem,
   planItem,
   setupItem,
@@ -17,6 +18,9 @@ import {
 } from '@/utils/storage';
 
 const ADD_TO_CART = '#add-to-cart-button, [name="submit.add-to-cart"]';
+
+// The cart badge in the header of every Amazon page
+const CART_COUNT = '#nav-cart-count';
 
 // Time for Amazon to confirm the add, on this page or the confirmation page it opens
 const CONFIRM_WINDOW_MS = 30_000;
@@ -59,6 +63,7 @@ export default defineContentScript({
       }
     });
     watchForProduct();
+    watchCartCount();
     // Picking another size or color swaps the product without reloading the page
     ctx.addEventListener(window, 'wxt:locationchange', () => watchForProduct());
     // Capture phase, so the click is seen before Amazon's handler can navigate away
@@ -102,6 +107,19 @@ function announceProduct() {
   browser.runtime.sendMessage(message).catch(() => {
     // The side panel is closed; it asks for the product when it opens
   });
+}
+
+// Amazon updates the badge in place after Add to Cart, so watch it instead of reading it once
+function watchCartCount() {
+  const badge = document.querySelector(CART_COUNT);
+  if (!badge) return;
+  const save = () => {
+    // "99+" reads as 99
+    const count = Number.parseInt(badge.textContent ?? '', 10);
+    if (!Number.isNaN(count)) void cartCountItem.setValue(count);
+  };
+  new MutationObserver(save).observe(badge, { childList: true, characterData: true, subtree: true });
+  save();
 }
 
 async function onClick(event: MouseEvent) {

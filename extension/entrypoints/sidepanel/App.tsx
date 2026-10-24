@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Check, Plan, PlannedPart, SetupEntry } from '@/utils/api';
 import { GET_PRODUCT, PRODUCT_FOUND, type Product, type ProductFoundMessage } from '@/utils/page';
 import { guessCategory } from '@/utils/category';
-import { addToShortlist, planItem, setupItem } from '@/utils/storage';
+import { addToShortlist, cartCountItem, planItem, setupItem } from '@/utils/storage';
 import CartStatus from './CartStatus';
 import RequestForm from './RequestForm';
 import { useEvaluation, type EvaluationState } from './useEvaluation';
@@ -198,6 +198,7 @@ function App() {
   const [editing, setEditing] = useState(false);
   const plan = useStoredItem(planItem);
   const setup = useStoredItem(setupItem) ?? [];
+  const cartCount = useStoredItem(cartCountItem) ?? 0;
 
   useEffect(() => {
     // This panel's window: messages and tab events from other windows are ignored
@@ -295,7 +296,7 @@ function App() {
             role="tab"
             aria-selected={tab === 'shortlist'}
           >
-            Shortlist · {setup.length}
+            List ({cartCount} in Cart)
           </button>
         </div>
       </section>

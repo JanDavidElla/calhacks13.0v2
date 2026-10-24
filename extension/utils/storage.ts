@@ -10,6 +10,11 @@ export const planItem = storage.defineItem<Plan | null>('local:plan', { fallback
 
 export const setupItem = storage.defineItem<ShortlistEntry[]>('local:setup', { fallback: [] });
 
+// The number on Amazon's cart badge, quantities included; null until an Amazon page is opened
+export const cartCountItem = storage.defineItem<number | null>('local:cartCount', {
+  fallback: null,
+});
+
 // What the last cart sync found, so the side panel can show why an item was or wasn't added
 export type CartReport = {
   checkedAt: number;
