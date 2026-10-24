@@ -10,9 +10,11 @@ from server.models import (
     ScoreCheck,
 )
 
-# The score rules from docs/api-contract.md: what each check takes off a score of 100
+# The score rules from docs/api-contract.md: what each check takes off a score of 100.
+# The wrong product loses the most: a conflict can be fixed by changing the other part, but
+# a lens cap is never a lens
 POINTS: dict[CheckKind, dict[CheckStatus, int]] = {
-    "match": {"pass": 0, "warn": -10, "fail": -40},
+    "match": {"pass": 0, "warn": -10, "fail": -80},
     "compatibility": {"pass": 0, "warn": -10, "fail": -40},
     "budget": {"pass": 0, "warn": -10, "fail": -20},
     "reviews": {"pass": 0, "warn": -5, "fail": -15},

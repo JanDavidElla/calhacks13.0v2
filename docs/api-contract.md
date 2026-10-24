@@ -85,10 +85,13 @@ be tuned, but the shapes won't change.
 
 | Check | pass | warn | fail |
 |---|---|---|---|
-| match, one per product | the right kind of product for the part, and it meets every need the request states: 0 | the listing doesn't confirm a stated need: −10 | the wrong kind of product (e.g. an accessory), or it misses a stated need: −40 |
+| match, one per product | the right kind of product for the part, and it meets every need the request states: 0 | the listing doesn't confirm a stated need: −10 | the wrong kind of product (e.g. an accessory), or it misses a stated need: −80 |
 | compatibility, one per pair of parts that depend on each other | works together: 0 | the listings don't confirm a detail: −10 | definite conflict: −40 |
 | budget, only when `max_price` is sent | at or under budget: 0 | up to 25% over: −10 | more than 25% over: −20 |
 | reviews | 4.0 stars or more: 0 | 3.5 to 3.9, or no rating: −5 | under 3.5: −15 |
+
+A failed match costs the most: changing the other part can fix a conflict, but nothing
+makes a lens cap a lens, so the wrong product scores 20 at most.
 
 Checks come back in this order. The match check covers the needs in `request` ("quiet",
 "white", "for a small room"), so send the user's request with every call.

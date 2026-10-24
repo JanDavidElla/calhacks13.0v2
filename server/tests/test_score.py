@@ -81,7 +81,7 @@ def test_score_matches_the_contract_alternatives_example() -> None:
 
 @pytest.mark.parametrize(
     ("result", "status", "points"),
-    [("matches", "pass", 0), ("unconfirmed", "warn", -10), ("mismatch", "fail", -40)],
+    [("matches", "pass", 0), ("unconfirmed", "warn", -10), ("mismatch", "fail", -80)],
 )
 def test_match_check_scores_claudes_verdict(result: Match, status: CheckStatus, points: int) -> None:
     check = match_check("Lens", MatchCheck(result=result, reason="It's a lens cap, not a lens."))
@@ -156,6 +156,15 @@ def test_score_with_nothing_to_check_against_has_no_compatibility_checks() -> No
     assert evaluation.score == 95
 
 
+def test_the_wrong_kind_of_product_scores_20_at_most() -> None:
+    cap = Product(asin="B0CAP00001", title="58mm Lens Cap", price=6.99,
+                  url="https://www.amazon.com/dp/B0CAP00001", stars=4.6)
+
+    evaluation = score_product("Lens", cap, MatchCheck(result="mismatch", reason="A lens cap."), [], 300)
+
+    assert evaluation.score == 20
+
+
 def test_score_never_goes_below_zero() -> None:
     bad = I5.model_copy(update={"price": 500, "stars": 2.1})
 
@@ -163,7 +172,7 @@ def test_score_never_goes_below_zero() -> None:
 
     evaluation = score_product("CPU", bad, mismatch, [fit("conflict")] * 3, max_price=180)
 
-    assert sum(c.points for c in evaluation.checks) == -195
+    assert sum(c.points for c in evaluation.checks) == -235
     assert evaluation.score == 0
 
 
