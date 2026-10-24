@@ -1,7 +1,7 @@
 # calhacks13.0v2
 
 A voice or text shopping assistant. Ask for something like "a PC setup for $600" or
-"Christmas stuff for my apartment, $200", and the server plans a shopping list with Grok,
+"Christmas stuff for my apartment, $200", and the server plans a shopping list with Claude,
 searches Amazon through Apify, and returns one product per item with links, images, and
 an explanation of why the products work together.
 
@@ -22,8 +22,10 @@ cp .env.example .env
 
 Fill in `server/.env` with your own keys (never commit this file):
 
-- `XAI_API_KEY` from [console.x.ai](https://console.x.ai) → API Keys
+- `ANTHROPIC_API_KEY` from [console.anthropic.com](https://console.anthropic.com) → API Keys
 - `APIFY_API_TOKEN` from [console.apify.com](https://console.apify.com) → Settings → API & Integrations
+- `XAI_API_KEY` (optional, only for voice requests) from [console.x.ai](https://console.x.ai) → API Keys.
+  Without it, voice requests return 503 and typed requests work as normal.
 
 Client dependencies:
 
@@ -66,14 +68,20 @@ Returns the transcript, budget, total, a summary, the chosen `parts` (each with 
 |---|---|
 | 200 | Build returned |
 | 400 | Missing/both inputs, empty or unreadable audio, or a request that isn't shopping or can't fit its budget (`detail` explains) |
-| 502 | xAI or Apify failed (`detail` explains) |
+| 502 | Claude, Apify, or xAI speech to text failed (`detail` explains) |
+| 503 | Audio sent, but the server has no `XAI_API_KEY` |
 
 The `Server-Timing` response header shows how long each stage took (`stt`, `plan`, `search`, `pick`).
 
 ### `POST /api/compatibility`
 
 JSON `{"parts": [...]}` with at least two parts (the `parts` from a build response can be sent
-as-is, e.g. after swapping one). Returns whether they work together and why. Takes about 6s.
+as-is, e.g. after swapping one). Returns whether they work together and why. Takes about 4s.
+
+### Evaluate (in progress)
+
+The score-and-fix flow (`/api/plan`, `/api/evaluate`, `/api/alternatives`) is described in
+[docs/api-contract.md](docs/api-contract.md), the agreement between the frontend and the server.
 
 ## Testing
 
@@ -92,16 +100,19 @@ Apify for the full set), so it asks before running:
 cd server
 uv run server                                   # in one terminal
 uv run python -m evals.run_eval                 # in another
-uv run python -m evals.run_eval --only reject   # free subset: rejections only
+uv run python -m evals.run_eval --only reject   # rejections only: no Apify, a few cents of Claude
 ```
 
 Other tools in `server/evals/`:
 
 - `make_audio.py` regenerates the voice test files (macOS only)
-- `compare_models.py` compares Grok models on saved Amazon results (xAI credit only)
+- `compare_models.py` compares Grok models on saved Amazon results. It was written for Grok
+  and doesn't work since the switch to Claude
 - `compare_captcha.py` A/B tests Apify's CAPTCHA solver
 
 ## Costs
 
-Each build uses about $0.18–0.20 of Apify credit and under $0.01 of xAI. The Apify free plan
-includes $5 per month. Off-topic and over-budget requests are rejected before any Apify search.
+Each build uses about $0.18–0.20 of Apify credit. Claude's cost per build hasn't been measured
+yet (Claude Opus 5.5 is $4 per million input tokens and $20 per million output tokens). The
+Apify free plan includes $5 per month. Off-topic and over-budget requests are rejected before
+any Apify search.

@@ -72,6 +72,7 @@ def test_to_product_maps_fields_and_builds_amazon_link() -> None:
         "url": "https://www.amazon.com/dp/B0TEST",
         "image": "https://img.example/B0TEST.jpg",
         "stars": 4.5,
+        "details": None,  # search results never include page details
     }
 
 

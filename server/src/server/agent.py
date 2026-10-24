@@ -97,7 +97,7 @@ async def ask_claude[T: BaseModel](
 def pick_request(request: str, budget: float, candidates: dict[str, list[Product]]) -> str:
     """The picking message for Claude; links and images are left out to save tokens."""
     candidates_json = json.dumps(
-        {category: [p.model_dump(exclude={"url", "image"}) for p in products]
+        {category: [p.model_dump(exclude={"url", "image", "details"}) for p in products]
          for category, products in candidates.items()}
     )
     return f"Request: {request}\nBudget: ${budget}\nCandidates: {candidates_json}"

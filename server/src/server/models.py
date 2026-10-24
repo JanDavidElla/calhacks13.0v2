@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 # Claude structured outputs: the Field descriptions are sent to Claude as instructions
@@ -43,7 +45,7 @@ class BuildPicks(BaseModel):
     compatibility: Compatibility
 
 
-# Amazon product data from Apify
+# Amazon product data, from Apify search results or a product page the extension reads
 
 
 class Product(BaseModel):
@@ -53,6 +55,8 @@ class Product(BaseModel):
     url: str
     image: str | None = None
     stars: float | None = None
+    # Bullet points and spec table text; only product pages have them, search results don't
+    details: str | None = None
 
 
 # API requests and responses
@@ -79,3 +83,55 @@ class BuildResponse(BaseModel):
 class CompatibilityRequest(BaseModel):
     # Accepts BuildResponse.parts as-is, so the frontend can resend a build after a swap
     parts: list[PartChoice]
+
+
+# Evaluate flow (docs/api-contract.md): the client keeps the user's setup and sends it with
+# every request, so the server stores nothing between requests
+
+
+class PlannedPart(PartPlan):
+    search_url: str  # Amazon search for this part, filtered to its budget
+
+
+class PlanResponse(BaseModel):
+    transcript: str
+    budget: float
+    parts: list[PlannedPart]
+
+
+type CheckKind = Literal["compatibility", "budget", "reviews"]
+type CheckStatus = Literal["pass", "warn", "fail"]
+
+
+class ScoreCheck(BaseModel):
+    kind: CheckKind
+    status: CheckStatus
+    parts: list[str]  # categories the check covers
+    reason: str
+    points: int  # 0 or negative: what this check took off the score
+
+
+class Evaluation(BaseModel):
+    score: int  # 0-100: starts at 100, plus every check's points
+    checks: list[ScoreCheck]
+
+
+class EvaluateRequest(BaseModel):
+    category: str
+    product: Product
+    setup: list[PartChoice] = []
+    max_price: float | None = None  # this part's budget from the plan; price isn't scored without it
+
+
+class AlternativesRequest(PartPlan):
+    setup: list[PartChoice] = []
+    product: Product | None = None  # the product to beat; without it, returns the best options
+
+
+class Alternative(Evaluation):
+    product: Product
+    price_difference: float | None  # vs. the product to beat; null when there isn't one
+
+
+class AlternativesResponse(BaseModel):
+    alternatives: list[Alternative]
