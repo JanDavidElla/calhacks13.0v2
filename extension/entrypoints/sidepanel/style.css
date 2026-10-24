@@ -1,9 +1,391 @@
+@font-face {
+  font-family: 'Press Start 2P';
+  src: url('https://static.figma.com/font/PressStart2P-Regular_1') format('woff2');
+}
+
+@font-face {
+  font-family: Inter;
+  src: url('https://static.figma.com/font/Inter_1') format('woff2');
+}
+
+@font-face {
+  font-family: 'Happy Monkey';
+  src: url('https://static.figma.com/font/HappyMonkey-Regular_1') format('woff2');
+}
+
 :root {
-  font-family: system-ui, sans-serif;
-  color-scheme: light dark;
+  color: #2a2117;
+  background: #f6f1e8;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 14px;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
+  min-width: 320px;
+  min-height: 100vh;
   margin: 0;
+}
+
+button {
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  background: #f3efe6;
+}
+
+.app-header {
+  display: flex;
+  height: 56px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+  border-bottom: 1px solid #d8c7a8;
+  background: #e8d8be;
+}
+
+.brand,
+.project-heading,
+.section-heading,
+.header-actions,
+.project-actions,
+.save-status,
+.disclosure-heading,
+.summary-line {
+  display: flex;
+  align-items: center;
+}
+
+.brand {
+  min-width: 0;
+  gap: 9px;
+}
+
+.brand-icon {
+  display: grid;
+  width: 27px;
+  height: 27px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 5px;
+  background: #efcb7f;
+  font-weight: 700;
+}
+
+.brand h1 {
+  overflow: hidden;
+  margin: 0;
+  font: 20px 'Press Start 2P', monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-actions {
+  margin-left: auto;
+  gap: 8px;
+}
+
+.icon-button {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid #d8c7a8;
+  border-radius: 8px;
+  background: #f1e4d0;
+  font-size: 20px;
+}
+
+.project-bar {
+  flex-shrink: 0;
+  padding: 14px 20px;
+  background: #efcb7f;
+}
+
+.project-heading {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.project-heading h2,
+.section-heading h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.project-actions {
+  gap: 12px;
+}
+
+.project-actions button {
+  padding: 0;
+  background: transparent;
+  font-size: 20px;
+}
+
+.save-status {
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.status-dot {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border: 1px solid #d8c7a8;
+  border-radius: 50%;
+  background: #f1e4d0;
+  font-size: 11px;
+}
+
+.tabs {
+  display: flex;
+  height: 44px;
+  gap: 3px;
+  margin-top: 12px;
+  padding: 3px;
+  border-radius: 10px;
+  background: #e8d8be;
+}
+
+.tab {
+  flex: 1;
+  border-radius: 8px;
+  background: transparent;
+  color: #303036;
+}
+
+.tab-active {
+  background: #fffefa;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 10%);
+  color: #2a2117;
+  font-weight: 600;
+}
+
+.content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+}
+
+.section-heading {
+  gap: 10px;
+}
+
+.section-icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 16px;
+  background: #f5eedb;
+  font-size: 22px;
+}
+
+.fit-card,
+.empty-state {
+  border: 1px solid #dcd5c8;
+  border-radius: 12px;
+  background: #fffcf6;
+}
+
+.fit-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   padding: 16px;
+}
+
+.score-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 20px 20px;
+  border: 1px solid #dcd5c8;
+  border-radius: 10px;
+  background: #fffcf6;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
+}
+
+.score {
+  color: #302d27;
+  font: 80px/90px 'Happy Monkey', cursive;
+  letter-spacing: -5px;
+}
+
+.score-label {
+  margin: -4px 0 0;
+  color: #99721f;
+  font-weight: 600;
+}
+
+.score-summary {
+  margin: 0 0 4px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.product-row {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #dcd5c8;
+  border-radius: 8px;
+  color: #302d27;
+  font-size: 17px;
+}
+
+.product-row strong {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-hint,
+.asin {
+  width: 100%;
+  margin: 0;
+  color: #5c4a3a;
+  font-size: 12px;
+  text-align: center;
+}
+
+.disclosures {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.disclosure {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.disclosure-good {
+  border-color: #b8cdb8;
+  background: #cbe7cb;
+  color: #45634d;
+}
+
+.disclosure-bad {
+  border-color: #d9b7ae;
+  background: #f4ded6;
+  color: #a85d46;
+}
+
+.disclosure-warn {
+  border-color: #e8d2a8;
+  background: #fff4e5;
+  color: #99721f;
+}
+
+.disclosure-heading {
+  justify-content: space-between;
+  font-weight: 600;
+}
+
+.chevron {
+  font-size: 18px;
+  line-height: 12px;
+  transition: transform 150ms ease;
+}
+
+.chevron-closed {
+  transform: rotate(-90deg);
+}
+
+.disclosure-detail {
+  display: block;
+  margin-top: 6px;
+  color: #302d27;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.empty-state {
+  padding: 24px;
+  text-align: center;
+}
+
+.empty-state p {
+  margin: 8px 0 0;
+  color: #5c4a3a;
+}
+
+.summary {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 24px 20px;
+  background: #d8b35a;
+}
+
+.summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid #b7791f;
+  border-radius: 10px;
+  background: #f7f1e4;
+}
+
+.summary-line {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.summary-line strong {
+  font-size: 24px;
+}
+
+.summary-card p {
+  margin: 0;
+  color: #4a4035;
+}
+
+.summary-card hr {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-top: 1px solid #b7791f;
+}
+
+.summary-detail {
+  font-size: 14px;
+}
+
+.summary-detail strong {
+  color: #2a5a3b;
+  font-size: 14px;
+}
+
+.plan-link {
+  background: transparent;
+  color: #8a4a1f;
+  font-weight: 600;
 }
