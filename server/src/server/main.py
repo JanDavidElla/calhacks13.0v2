@@ -1,3 +1,5 @@
+from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import Annotated
 
 import httpx
@@ -5,12 +7,69 @@ from anthropic import APIError
 from apify_client.errors import ApifyApiError
 from fastapi import FastAPI, File, Form, HTTPException, Response, UploadFile
 
-from server.agent import BuildRejected, build, check_compatibility
-from server.models import BuildResponse, Compatibility, CompatibilityRequest
+from server.agent import (
+    BuildRejected,
+    InvalidResponse,
+    SearchFailed,
+    build,
+    check_compatibility,
+    evaluate,
+    find_alternatives,
+    plan_checklist,
+)
+from server.models import (
+    AlternativesRequest,
+    AlternativesResponse,
+    BuildResponse,
+    Compatibility,
+    CompatibilityRequest,
+    EvaluateRequest,
+    Evaluation,
+    PlanResponse,
+)
 from server.stt import UnreadableAudio, VoiceUnavailable, transcribe
 from server.timing import Timings
 
 app = FastAPI()
+
+TextField = Annotated[str | None, Form()]
+AudioField = Annotated[UploadFile | None, File()]
+
+
+@contextmanager
+def agent_errors() -> Iterator[None]:
+    """Turn agent failures into the error responses in docs/api-contract.md."""
+    try:
+        yield
+    except BuildRejected as e:
+        raise HTTPException(400, str(e)) from e
+    except APIError as e:
+        raise HTTPException(502, f"Claude request failed: {e.message}") from e
+    except ApifyApiError as e:
+        raise HTTPException(502, f"Amazon search failed: {e.message}") from e
+    except (InvalidResponse, SearchFailed) as e:
+        raise HTTPException(502, str(e)) from e
+
+
+async def read_request(text: str | None, audio: UploadFile | None, timings: Timings) -> str:
+    """The typed request, or what was said in the recording."""
+    if (text is None) == (audio is None):
+        raise HTTPException(400, "Send either 'text' or 'audio' (exactly one)")
+
+    if audio is not None:
+        try:
+            with timings.measure("stt"):
+                text = await transcribe(await audio.read(), audio.filename or "audio")
+        except UnreadableAudio as e:
+            raise HTTPException(400, str(e)) from e
+        except VoiceUnavailable as e:
+            raise HTTPException(503, str(e)) from e
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(502, f"Could not transcribe audio: {e.response.text}") from e
+
+    if not text or not text.strip():
+        raise HTTPException(400, "The request is empty")
+    return text.strip()
 
 
 @app.get("/api/health")
@@ -19,41 +78,50 @@ def health() -> dict[str, str]:
 
 
 @app.post("/api/build")
-async def create_build(
-    response: Response,
-    text: Annotated[str | None, Form()] = None,
-    audio: Annotated[UploadFile | None, File()] = None,
-) -> BuildResponse:
+async def create_build(response: Response, text: TextField = None, audio: AudioField = None) -> BuildResponse:
     """Build a shopping list from a typed request or a voice recording."""
-    if (text is None) == (audio is None):
-        raise HTTPException(400, "Send either 'text' or 'audio' (exactly one)")
-
     timings = Timings()
     with timings.measure("total"):
-        if audio is not None:
-            try:
-                with timings.measure("stt"):
-                    text = await transcribe(await audio.read(), audio.filename or "audio")
-            except UnreadableAudio as e:
-                raise HTTPException(400, str(e)) from e
-            except VoiceUnavailable as e:
-                raise HTTPException(503, str(e)) from e
-            except httpx.HTTPStatusError as e:
-                raise HTTPException(502, f"Could not transcribe audio: {e.response.text}") from e
-
-        if not text or not text.strip():
-            raise HTTPException(400, "The request is empty")
-
-        try:
-            result = await build(text.strip(), timings)
-        except BuildRejected as e:
-            raise HTTPException(400, str(e)) from e
-        except APIError as e:
-            raise HTTPException(502, f"Claude request failed: {e.message}") from e
-        except ApifyApiError as e:
-            raise HTTPException(502, f"Amazon search failed: {e.message}") from e
+        request = await read_request(text, audio, timings)
+        with agent_errors():
+            result = await build(request, timings)
 
     # Stage durations in ms, shown in browser devtools under Network → Timing
+    response.headers["Server-Timing"] = timings.header()
+    return result
+
+
+@app.post("/api/plan")
+async def create_plan(response: Response, text: TextField = None, audio: AudioField = None) -> PlanResponse:
+    """Turn a typed request or a voice recording into the Evaluate flow's checklist."""
+    timings = Timings()
+    with timings.measure("total"):
+        request = await read_request(text, audio, timings)
+        with agent_errors():
+            result = await plan_checklist(request, timings)
+
+    response.headers["Server-Timing"] = timings.header()
+    return result
+
+
+@app.post("/api/evaluate")
+async def evaluate_product(request: EvaluateRequest, response: Response) -> Evaluation:
+    """Score one product for its part of the request and against the user's setup."""
+    timings = Timings()
+    with timings.measure("total"), agent_errors():
+        result = await evaluate(request, timings)
+
+    response.headers["Server-Timing"] = timings.header()
+    return result
+
+
+@app.post("/api/alternatives")
+async def alternatives(request: AlternativesRequest, response: Response) -> AlternativesResponse:
+    """Find up to 3 options for a part that score higher than the product to beat."""
+    timings = Timings()
+    with timings.measure("total"), agent_errors():
+        result = await find_alternatives(request, timings)
+
     response.headers["Server-Timing"] = timings.header()
     return result
 
@@ -65,10 +133,8 @@ async def compatibility(request: CompatibilityRequest, response: Response) -> Co
         raise HTTPException(400, "Send at least two parts to compare")
 
     timings = Timings()
-    try:
+    with agent_errors():
         result = await check_compatibility(request.parts, timings)
-    except APIError as e:
-        raise HTTPException(502, f"Claude request failed: {e.message}") from e
 
     response.headers["Server-Timing"] = timings.header()
     return result

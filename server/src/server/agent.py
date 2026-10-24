@@ -8,22 +8,22 @@ from server.amazon import search_parts, search_url
 from server.config import get_settings
 from server.models import (
     Alternative,
-    AlternativeFits,
     AlternativesRequest,
     AlternativesResponse,
     BuildPart,
     BuildPicks,
     BuildPlan,
     BuildResponse,
+    CandidateVerdicts,
     Compatibility,
     EvaluateRequest,
     Evaluation,
     FitCheck,
-    FitChecks,
     PartChoice,
     PlannedPart,
     PlanResponse,
     Product,
+    Verdict,
 )
 from server.score import score_product
 from server.timing import Timings
@@ -38,6 +38,9 @@ PICK_EFFORT: Effort = "medium"
 # Each item is one Amazon search, so this also caps Apify cost per request
 MAX_ITEMS = 8
 MAX_ALTERNATIVES = 3
+# A stalled request fails after this long instead of the SDK's default 10 minutes; a whole
+# build, with several Claude calls, takes about 40s
+CLAUDE_TIMEOUT_S = 60
 
 PLAN_PROMPT = f"""You are a shopping assistant that plans what to buy on Amazon.
 Turn the user's request into a list of up to {MAX_ITEMS} distinct items.
@@ -48,11 +51,15 @@ Turn the user's request into a list of up to {MAX_ITEMS} distinct items.
   gifts for a hobby): pick a varied set of items that fit the theme well,
   rather than several of the same thing.
 Split the total budget across the items so the sum stays within it. If no
-budget is given, choose a sensible one. Write short, specific Amazon search
-queries that will find the main product, not accessories.
+budget is given, choose a typical one for the request and set
+budget_estimated. Write short, specific Amazon search queries that will find
+the main product, not accessories.
 Set rejection to a short explanation, and leave parts empty, only if the
 request can't be met by buying products or the budget clearly can't cover it
-(e.g. a gaming PC for $50)."""
+(e.g. a gaming PC for $50). If you can't tell what kind of items to buy (e.g.
+"stuff for my house"), or the request needs far more than {MAX_ITEMS} items to
+be useful, set rejection to one short question that would narrow it instead.
+Themes, such as Christmas decor for an apartment, are not too broad."""
 
 COMPATIBILITY_GUIDE = """Explain compatibility with one check per relationship that
 matters. For PCs: CPU socket vs motherboard, RAM type vs motherboard, power
@@ -85,14 +92,25 @@ of the named models (e.g. a graphics card's typical power draw). Choose conflict
 only for a definite conflict, and unconfirmed when neither the listings nor the
 model's known specs settle a detail that matters."""
 
-EVALUATE_PROMPT = f"""You check whether a product the user is viewing on Amazon
-works with the products already in their setup.
+MATCH_GUIDE = """First judge the match: the product must be the kind of product
+the part calls for, not an accessory or a different item, and meet every need
+the request states that applies to this part (e.g. quiet, white, fits a small
+room). Choose unconfirmed when the listing doesn't show a stated need, and
+mismatch for the wrong kind of product or a need it clearly misses. Needs the
+request doesn't state don't count. Leave price and ratings out: they're scored
+separately."""
+
+EVALUATE_PROMPT = f"""You judge a product the user is viewing on Amazon for one
+part of their request.
+{MATCH_GUIDE}
+Then check whether it works with the products already in their setup.
 {FIT_GUIDE}"""
 
-ALTERNATIVES_PROMPT = f"""You check whether each of several candidate products
-works with the products already in the user's setup. Return one entry for every
-candidate, copying its ASIN exactly, and judge each candidate as the product on
-its own.
+ALTERNATIVES_PROMPT = f"""You judge several candidate products for one part of
+the user's request. Return one entry for every candidate, copying its ASIN
+exactly, and judge each candidate as the product on its own.
+{MATCH_GUIDE}
+Then check whether it works with the products already in the user's setup.
 {FIT_GUIDE}"""
 
 
@@ -104,8 +122,12 @@ class SearchFailed(Exception):
     """Amazon returned no results for a part, even after retries."""
 
 
+class InvalidResponse(RuntimeError):
+    """Claude's reply didn't match the schema, or every model declined the request."""
+
+
 def get_client() -> AsyncAnthropic:
-    return AsyncAnthropic(api_key=get_settings().anthropic_api_key)
+    return AsyncAnthropic(api_key=get_settings().anthropic_api_key, timeout=CLAUDE_TIMEOUT_S)
 
 
 async def ask_claude[T: BaseModel](
@@ -125,10 +147,10 @@ async def ask_claude[T: BaseModel](
         )
     except ValidationError as e:
         # parse validates the text as it arrives, so a reply that isn't the schema raises here
-        raise RuntimeError("Claude did not return a valid response") from e
+        raise InvalidResponse("Claude did not return a valid response") from e
     parsed = message.parsed_output
     if parsed is None:
-        raise RuntimeError("Claude did not return a valid response")
+        raise InvalidResponse("Claude did not return a valid response")
     return parsed
 
 
@@ -157,6 +179,7 @@ async def plan_checklist(request: str, timings: Timings | None = None) -> PlanRe
     return PlanResponse(
         transcript=request,
         budget=plan.budget,
+        budget_estimated=plan.budget_estimated,
         parts=[
             PlannedPart(**part.model_dump(), search_url=search_url(part.search_query, part.max_price))
             for part in plan.parts
@@ -223,25 +246,28 @@ def checks_on(category: str, fits: list[FitCheck]) -> list[FitCheck]:
     return [fit for fit in fits if category in fit.parts]
 
 
+def request_line(request: str | None) -> str:
+    return f"Request: {request}\n" if request else ""
+
+
 async def evaluate(request: EvaluateRequest, timings: Timings | None = None) -> Evaluation:
-    """Score one product against the user's setup."""
+    """Score one product for its part of the request and against the user's setup."""
     timings = timings or Timings()
+    product = json.dumps(listing(request.category, request.product))
     setup = other_parts(request.category, request.setup)
-    fits: list[FitCheck] = []
-    # With nothing to check against, the score needs no Claude call
-    if setup:
-        product = json.dumps(listing(request.category, request.product))
-        with timings.measure("check"):
-            result = await ask_claude(
-                get_client(), PICK_EFFORT, EVALUATE_PROMPT,
-                f"Product: {product}\nSetup: {setup_listing(setup)}", FitChecks,
-            )
-        fits = checks_on(request.category, result.checks)
-    return score_product(request.category, request.product, fits, request.max_price)
+    with timings.measure("check"):
+        verdict = await ask_claude(
+            get_client(), PICK_EFFORT, EVALUATE_PROMPT,
+            f"{request_line(request.request)}Product: {product}\nSetup: {setup_listing(setup)}", Verdict,
+        )
+    return score_product(
+        request.category, request.product, verdict.match, checks_on(request.category, verdict.checks),
+        request.max_price,
+    )
 
 
 async def find_alternatives(request: AlternativesRequest, timings: Timings | None = None) -> AlternativesResponse:
-    """Search Amazon for the part and return the options that score highest against the setup.
+    """Search Amazon for the part and return the options that score highest for it.
 
     With a product to beat, only options that score higher than it come back.
     """
@@ -253,30 +279,37 @@ async def find_alternatives(request: AlternativesRequest, timings: Timings | Non
     beat = request.product
     # Keyed by ASIN, which also drops repeated results and the product to beat
     candidates = {p.asin: p for p in found if beat is None or p.asin != beat.asin}
+    if not candidates:
+        return AlternativesResponse(alternatives=[])
 
-    fits: dict[str, list[FitCheck]] = {}
+    # The product to beat is judged in the same call, so it's held to the same standard
+    judged = [*candidates.values(), *([beat] if beat else [])]
+    listings = [p.model_dump(include={"asin", "title", "details"}, exclude_none=True) for p in judged]
     setup = other_parts(request.category, request.setup)
-    if setup and candidates:
-        # The product to beat is judged in the same call, so it's held to the same standard
-        judged = [*candidates.values(), *([beat] if beat else [])]
-        listings = [p.model_dump(include={"asin", "title", "details"}, exclude_none=True) for p in judged]
-        with timings.measure("check"):
-            result = await ask_claude(
-                get_client(), PICK_EFFORT, ALTERNATIVES_PROMPT,
-                f"Category: {request.category}\nCandidates: {json.dumps(listings)}\n"
-                f"Setup: {setup_listing(setup)}",
-                AlternativeFits,
-            )
-        fits = {c.asin: checks_on(request.category, c.checks) for c in result.candidates}
-        # How a candidate Claude left out fits is unknown, so it isn't offered. If Claude
-        # left out the product to beat, it gets no compatibility checks, which only raises the bar
-        candidates = {asin: p for asin, p in candidates.items() if asin in fits}
+    with timings.measure("check"):
+        result = await ask_claude(
+            get_client(), PICK_EFFORT, ALTERNATIVES_PROMPT,
+            f"{request_line(request.request)}Category: {request.category}\n"
+            f"Candidates: {json.dumps(listings)}\nSetup: {setup_listing(setup)}",
+            CandidateVerdicts,
+        )
+    verdicts = {v.asin: v for v in result.candidates}
 
     def score(product: Product) -> Evaluation:
-        return score_product(request.category, product, fits.get(product.asin, []), request.max_price)
+        verdict = verdicts.get(product.asin)
+        return score_product(
+            request.category, product,
+            verdict.match if verdict else None,
+            checks_on(request.category, verdict.checks) if verdict else [],
+            request.max_price,
+        )
 
+    # Candidates Claude left out aren't offered, since how they fit is unknown, and neither is
+    # the wrong kind of product. If Claude left out the product to beat, it gets no match or
+    # compatibility checks, which only raises the bar
+    offered = [p for p in candidates.values() if p.asin in verdicts and verdicts[p.asin].match.result != "mismatch"]
     bar = score(beat).score if beat else None
-    scored = [(product, score(product)) for product in candidates.values()]
+    scored = [(product, score(product)) for product in offered]
     alternatives = [
         Alternative(
             product=product,

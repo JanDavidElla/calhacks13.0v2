@@ -12,7 +12,7 @@ where products depend on each other: PCs, cameras and lenses, home theater, desk
 | Part | State |
 |---|---|
 | Server: `/api/build`, `/api/compatibility` | Working, on Claude |
-| Server: `/api/plan`, `/api/evaluate`, `/api/alternatives` | Not built yet. The request and response shapes are agreed in [docs/api-contract.md](docs/api-contract.md) |
+| Server: `/api/plan`, `/api/evaluate`, `/api/alternatives` | Working, on Claude. Request and response shapes are in [docs/api-contract.md](docs/api-contract.md) |
 | Chrome extension (`extension/`) | Skeleton: the side panel opens and shows the title of the Amazon product you're viewing |
 | Website (`client/`) | Not started, still the Vite starter page. It's the demo backup if the extension has trouble |
 
@@ -107,12 +107,13 @@ The `Server-Timing` response header shows how long each stage took (`stt`, `plan
 JSON `{"parts": [...]}` with at least two parts (the `parts` from a build response can be sent
 as-is, e.g. after swapping one). Returns whether they work together and why. Takes about 4s.
 
-### Evaluate (in progress)
+### Evaluate
 
 `/api/plan`, `/api/evaluate`, and `/api/alternatives` power the extension: the checklist, the
 score for one product, and better options. They're described in
-[docs/api-contract.md](docs/api-contract.md), with example requests and responses the
-frontend can use as mock data until each endpoint is marked ready there.
+[docs/api-contract.md](docs/api-contract.md), with example requests and responses. Claude
+judges each product (does it match the request, does it work with the setup), and
+`server/src/server/score.py` turns those verdicts into the 0–100 score in code.
 
 ## Testing
 

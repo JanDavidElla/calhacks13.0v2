@@ -7,19 +7,22 @@ file first so both sides stay in sync.
 
 | Endpoint | Status |
 |---|---|
-| `POST /api/plan` | Not built yet: use the example as mock data |
-| `POST /api/evaluate` | Not built yet: use the example as mock data |
-| `POST /api/alternatives` | Not built yet: use the example as mock data |
+| `POST /api/plan` | Ready |
+| `POST /api/evaluate` | Ready |
+| `POST /api/alternatives` | Ready |
 
 The request and response shapes are already defined in `server/src/server/models.py`.
 
 ## The flow
 
 1. **Plan.** The user types what they want ("a gaming PC for $600"). `/api/plan` returns a
-   checklist of parts, each with a budget and an Amazon search link.
-2. **Shop.** The user opens a part's search link and lands on a product page.
+   checklist of parts, each with a budget and an Amazon search link. Until there's a plan,
+   the extension shows only the request box.
+2. **Shop.** The user opens a part's search link and lands on a product page. On a page that
+   isn't a product, show something like "Open a product to evaluate it."
 3. **Evaluate.** The user clicks Evaluate. The extension reads the page and calls
-   `/api/evaluate`, which returns a 0–100 score and the checks behind it.
+   `/api/evaluate`, which returns a 0–100 score and the checks behind it. The first product
+   is scored too: on whether it matches the request, its price, and its reviews.
 4. **Improve.** At the same time, the frontend calls `/api/alternatives` to get up to 3
    options that score higher, with the price difference. A conflict can also be fixed by
    changing the *other* part (see "Fixing the other part" below).
@@ -69,7 +72,7 @@ table as plain text, at most 4,000 characters. Search results never include it.
 }
 ```
 
-- `kind`: `compatibility`, `budget`, or `reviews`
+- `kind`: `match`, `compatibility`, `budget`, or `reviews`
 - `status`: `pass`, `warn`, or `fail` (suggested colors: green, amber, red)
 - `parts`: the checklist categories the check covers
 - `points`: 0 or negative, what this check took off the score
@@ -82,12 +85,18 @@ be tuned, but the shapes won't change.
 
 | Check | pass | warn | fail |
 |---|---|---|---|
+| match, one per product | the right kind of product for the part, and it meets every need the request states: 0 | the listing doesn't confirm a stated need: −10 | the wrong kind of product (e.g. an accessory), or it misses a stated need: −40 |
 | compatibility, one per pair of parts that depend on each other | works together: 0 | the listings don't confirm a detail: −10 | definite conflict: −40 |
 | budget, only when `max_price` is sent | at or under budget: 0 | up to 25% over: −10 | more than 25% over: −20 |
 | reviews | 4.0 stars or more: 0 | 3.5 to 3.9, or no rating: −5 | under 3.5: −15 |
 
+Checks come back in this order. The match check covers the needs in `request` ("quiet",
+"white", "for a small room"), so send the user's request with every call.
+
 When the setup is empty, or nothing in it depends on the product (decor, gifts), there are no
-compatibility checks. Show something like "Nothing to check against yet" in that case.
+compatibility checks. Show something like "Nothing to check against yet" in that case. The
+alternatives are the baseline for the first product: other options for the same part, scored
+the same way.
 
 ## `POST /api/plan`
 
@@ -109,6 +118,7 @@ Response:
 {
   "transcript": "a gaming PC for $600",
   "budget": 600,
+  "budget_estimated": false,
   "parts": [
     {
       "category": "CPU",
@@ -126,7 +136,17 @@ Response:
 }
 ```
 
-Expected time: a few seconds (one Claude call, no Amazon search).
+`budget_estimated` is `true` when the request didn't state a budget, so Claude chose a typical
+one. Without a budget, price can't be scored, so there's always one. When it's estimated, show
+something like "We assumed about $600. Change it." To change it, call `/api/plan` again with
+the budget added to the request ("a gaming PC, budget $1,500").
+
+When the request is too broad to plan ("stuff for my house"), the response is a 400 whose
+`detail` is a question for the user, such as "Which room are you shopping for?" Show it and
+keep the request box, so the user can type a clearer request. Themes ("Christmas decor for my
+apartment, $200") are planned as usual.
+
+Expected time: about 4–6 seconds (one Claude call, no Amazon search).
 
 ## `POST /api/evaluate`
 
@@ -134,6 +154,7 @@ Scores one product against the setup. JSON body:
 
 ```json
 {
+  "request": "a gaming PC for $600",
   "category": "CPU",
   "product": {
     "asin": "B0CPU00001",
@@ -162,7 +183,9 @@ Scores one product against the setup. JSON body:
 }
 ```
 
-`setup` and `max_price` are optional. Without `max_price`, there's no budget check.
+`request` is the `transcript` from `/api/plan`. `request`, `setup`, and `max_price` are
+optional. Without `request`, the match check only asks whether this is the right kind of
+product for the part. Without `max_price`, there's no budget check.
 
 Response:
 
@@ -170,6 +193,13 @@ Response:
 {
   "score": 50,
   "checks": [
+    {
+      "kind": "match",
+      "status": "pass",
+      "parts": ["CPU"],
+      "reason": "A 14-core desktop CPU is a strong fit for a gaming PC.",
+      "points": 0
+    },
     {
       "kind": "compatibility",
       "status": "fail",
@@ -195,7 +225,7 @@ Response:
 }
 ```
 
-Expected time: about 4–8 seconds (one Claude call). Show a loading state.
+Expected time: about 3–5 seconds (one Claude call). Show a loading state.
 
 ## `POST /api/alternatives`
 
@@ -205,6 +235,7 @@ plus the product to beat.
 
 ```json
 {
+  "request": "a gaming PC for $600",
   "category": "CPU",
   "search_query": "AMD Ryzen 5 7600 processor",
   "max_price": 180,
@@ -235,7 +266,8 @@ plus the product to beat.
 ```
 
 With `product`, only options that score higher than it come back. Without it, the best
-options for the part come back (the website flow).
+options for the part come back (the website flow). A search result whose match check fails
+(the wrong kind of product, or one that misses a stated need) never comes back.
 
 Response:
 
@@ -254,6 +286,13 @@ Response:
       },
       "score": 100,
       "checks": [
+        {
+          "kind": "match",
+          "status": "pass",
+          "parts": ["CPU"],
+          "reason": "A 6-core desktop CPU is a good value pick for a gaming PC.",
+          "points": 0
+        },
         {
           "kind": "compatibility",
           "status": "pass",
@@ -287,7 +326,7 @@ It's `null` when no `product` was sent. An empty list means nothing scored highe
 something like "This is already the best fit we found."
 
 Expected time: the slowest call, because it runs an Amazon search and then a Claude call.
-Expect 20–40 seconds until we measure it. Start it at the same time as `/api/evaluate`, and
+Expect about 15–25 seconds (17 in testing: 7 for the search, 11 for Claude). Start it at the same time as `/api/evaluate`, and
 show the score first.
 
 ### Fixing the other part
@@ -303,7 +342,7 @@ Every error body is `{"detail": "a message you can show the user"}`.
 
 | Status | Meaning |
 |---|---|
-| 400 | The request isn't shopping, can't fit its budget, or has missing inputs |
+| 400 | The request isn't shopping, can't fit its budget, is too broad (`detail` is a question to ask), or has missing inputs |
 | 422 | The JSON doesn't match the shapes above (`detail` says which field) |
 | 502 | Claude or the Amazon search failed: offer a retry |
 | 503 | Voice was sent, but voice isn't set up on the server: ask the user to type instead |

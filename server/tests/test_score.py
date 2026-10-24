@@ -1,7 +1,21 @@
 import pytest
 
-from server.models import CheckStatus, Fit, FitCheck, Product, ScoreCheck
-from server.score import budget_check, compatibility_check, reviews_check, score_product
+from server.models import (
+    CheckStatus,
+    Fit,
+    FitCheck,
+    Match,
+    MatchCheck,
+    Product,
+    ScoreCheck,
+)
+from server.score import (
+    budget_check,
+    compatibility_check,
+    match_check,
+    reviews_check,
+    score_product,
+)
 
 # The examples in docs/api-contract.md
 I5 = Product(
@@ -26,15 +40,20 @@ SOCKET_CONFLICT = FitCheck(
 )
 
 
+I5_MATCH = MatchCheck(result="matches", reason="A 14-core desktop CPU is a strong fit for a gaming PC.")
+GOOD_MATCH = MatchCheck(result="matches", reason="It's a CPU.")
+
+
 def fit(result: Fit) -> FitCheck:
     return FitCheck(parts=["CPU", "Motherboard"], result=result, reason="Socket check.")
 
 
 def test_score_matches_the_contract_evaluate_example() -> None:
-    evaluation = score_product("CPU", I5, [SOCKET_CONFLICT], max_price=180)
+    evaluation = score_product("CPU", I5, I5_MATCH, [SOCKET_CONFLICT], max_price=180)
 
     assert evaluation.score == 50
     assert evaluation.checks == [
+        ScoreCheck(kind="match", status="pass", parts=["CPU"], reason=I5_MATCH.reason, points=0),
         ScoreCheck(kind="compatibility", status="fail", parts=["CPU", "Motherboard"],
                    reason=SOCKET_CONFLICT.reason, points=-40),
         ScoreCheck(kind="budget", status="warn", parts=["CPU"],
@@ -47,14 +66,28 @@ def test_score_matches_the_contract_alternatives_example() -> None:
     fits = FitCheck(parts=["CPU", "Motherboard"], result="fits",
                     reason="The Ryzen 5 7600 is an AM5 CPU, so it fits the MSI B650 Tomahawk.")
 
-    evaluation = score_product("CPU", RYZEN, [fits], max_price=180)
+    match = MatchCheck(result="matches", reason="A 6-core desktop CPU is a good value pick for a gaming PC.")
+
+    evaluation = score_product("CPU", RYZEN, match, [fits], max_price=180)
 
     assert evaluation.score == 100
     assert [(c.kind, c.status, c.reason) for c in evaluation.checks] == [
+        ("match", "pass", match.reason),
         ("compatibility", "pass", fits.reason),
         ("budget", "pass", "$11.00 under this part's $180 budget."),
         ("reviews", "pass", "Rated 4.8 out of 5."),
     ]
+
+
+@pytest.mark.parametrize(
+    ("result", "status", "points"),
+    [("matches", "pass", 0), ("unconfirmed", "warn", -10), ("mismatch", "fail", -40)],
+)
+def test_match_check_scores_claudes_verdict(result: Match, status: CheckStatus, points: int) -> None:
+    check = match_check("Lens", MatchCheck(result=result, reason="It's a lens cap, not a lens."))
+
+    assert (check.kind, check.status, check.points) == ("match", status, points)
+    assert (check.parts, check.reason) == (["Lens"], "It's a lens cap, not a lens.")
 
 
 @pytest.mark.parametrize(
@@ -108,23 +141,34 @@ def test_reviews_check_uses_the_star_rating(
 
 
 def test_score_skips_the_budget_check_without_a_max_price() -> None:
-    evaluation = score_product("CPU", I5, [])
+    evaluation = score_product("CPU", I5, GOOD_MATCH, [])
 
-    assert [c.kind for c in evaluation.checks] == ["reviews"]
+    assert [c.kind for c in evaluation.checks] == ["match", "reviews"]
     assert evaluation.score == 100
 
 
 def test_score_with_nothing_to_check_against_has_no_compatibility_checks() -> None:
-    evaluation = score_product("String lights", RYZEN.model_copy(update={"stars": None}), [], max_price=200)
+    lights = RYZEN.model_copy(update={"stars": None})
 
-    assert [c.kind for c in evaluation.checks] == ["budget", "reviews"]
+    evaluation = score_product("String lights", lights, MatchCheck(result="matches", reason="Lights."), [], 200)
+
+    assert [c.kind for c in evaluation.checks] == ["match", "budget", "reviews"]
     assert evaluation.score == 95
 
 
 def test_score_never_goes_below_zero() -> None:
     bad = I5.model_copy(update={"price": 500, "stars": 2.1})
 
-    evaluation = score_product("CPU", bad, [fit("conflict")] * 3, max_price=180)
+    mismatch = MatchCheck(result="mismatch", reason="It's a CPU cooler.")
 
-    assert sum(c.points for c in evaluation.checks) == -155
+    evaluation = score_product("CPU", bad, mismatch, [fit("conflict")] * 3, max_price=180)
+
+    assert sum(c.points for c in evaluation.checks) == -195
     assert evaluation.score == 0
+
+
+def test_score_without_a_match_verdict_leaves_the_check_out() -> None:
+    # e.g. Claude left the product to beat out of its reply
+    evaluation = score_product("CPU", I5, None, [], max_price=180)
+
+    assert [c.kind for c in evaluation.checks] == ["budget", "reviews"]

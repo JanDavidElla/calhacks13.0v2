@@ -4,16 +4,20 @@ from server.models import (
     Evaluation,
     Fit,
     FitCheck,
+    Match,
+    MatchCheck,
     Product,
     ScoreCheck,
 )
 
 # The score rules from docs/api-contract.md: what each check takes off a score of 100
 POINTS: dict[CheckKind, dict[CheckStatus, int]] = {
+    "match": {"pass": 0, "warn": -10, "fail": -40},
     "compatibility": {"pass": 0, "warn": -10, "fail": -40},
     "budget": {"pass": 0, "warn": -10, "fail": -20},
     "reviews": {"pass": 0, "warn": -5, "fail": -15},
 }
+MATCH_STATUS: dict[Match, CheckStatus] = {"matches": "pass", "unconfirmed": "warn", "mismatch": "fail"}
 FIT_STATUS: dict[Fit, CheckStatus] = {"fits": "pass", "unconfirmed": "warn", "conflict": "fail"}
 # Up to this share over the part's budget is a warning, more is a fail
 BUDGET_TOLERANCE = 0.25
@@ -23,6 +27,10 @@ OK_STARS = 3.5
 
 def scored(kind: CheckKind, status: CheckStatus, parts: list[str], reason: str) -> ScoreCheck:
     return ScoreCheck(kind=kind, status=status, parts=parts, reason=reason, points=POINTS[kind][status])
+
+
+def match_check(category: str, match: MatchCheck) -> ScoreCheck:
+    return scored("match", MATCH_STATUS[match.result], [category], match.reason)
 
 
 def compatibility_check(fit: FitCheck) -> ScoreCheck:
@@ -50,14 +58,20 @@ def reviews_check(category: str, stars: float | None) -> ScoreCheck:
 
 
 def score_product(
-    category: str, product: Product, fits: list[FitCheck], max_price: float | None = None
+    category: str,
+    product: Product,
+    match: MatchCheck | None,
+    fits: list[FitCheck],
+    max_price: float | None = None,
 ) -> Evaluation:
     """Score a product in code from Claude's verdicts, so the same checks always give the same score.
 
-    fits are Claude's checks of the product against the setup, empty when nothing in the
+    match is Claude's verdict on whether the product is what the part and the request call
+    for. fits are its checks of the product against the setup, empty when nothing in the
     setup depends on it. Without max_price, the price isn't scored.
     """
-    checks = [compatibility_check(fit) for fit in fits]
+    checks = [match_check(category, match)] if match else []
+    checks += [compatibility_check(fit) for fit in fits]
     if max_price is not None:
         checks.append(budget_check(category, product.price, max_price))
     checks.append(reviews_check(category, product.stars))
