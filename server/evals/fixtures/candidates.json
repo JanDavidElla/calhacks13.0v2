@@ -1,0 +1,1445 @@
+{
+ "source": "Live eval 2026-10-24 (evals/results/20261024-093732.json); products as Apify returned them",
+ "builds": [
+  {
+   "case": "text_gaming_pc_800",
+   "kind": "pc",
+   "request": "Build me a gaming PC for 800 dollars",
+   "budget": 800,
+   "apify_runs": [
+    "BT5hnarrcCz7OFmuA"
+   ],
+   "candidates": {
+    "CPU": [
+     {
+      "asin": "B09VCHR1VH",
+      "title": "AMDRyzen 5 5600 6-Core, 12-Thread Unlocked Desktop Processor with Wraith Stealth Cooler",
+      "price": 152.99,
+      "url": "https://www.amazon.com/dp/B09VCHR1VH",
+      "image": "https://m.media-amazon.com/images/I/51So7GoGvxL._AC_UY218_.jpg",
+      "stars": 4.8
+     },
+     {
+      "asin": "B09VCJ171S",
+      "title": "AMDRyzen 5 5500 6-Core, 12-Thread Unlocked Desktop Processor with Wraith Stealth Cooler",
+      "price": 88.93,
+      "url": "https://www.amazon.com/dp/B09VCJ171S",
+      "image": "https://m.media-amazon.com/images/I/51So7GoGvxL._AC_UY218_.jpg",
+      "stars": 4.7
+     },
+     {
+      "asin": "B08166SLDF",
+      "title": "AMDRyzen 5 5600X 6-core, 12-thread unlocked desktop processor with Wraith Stealth cooler",
+      "price": 159.0,
+      "url": "https://www.amazon.com/dp/B08166SLDF",
+      "image": "https://m.media-amazon.com/images/I/51ld6RR8IrL._AC_UY218_.jpg",
+      "stars": 4.8
+     },
+     {
+      "asin": "B0BBJDS62N",
+      "title": "AMDRyzen 5 7600X 6-Core, 12-Thread Unlocked Desktop Processor",
+      "price": 167.99,
+      "url": "https://www.amazon.com/dp/B0BBJDS62N",
+      "image": "https://m.media-amazon.com/images/I/51m7L9bQI8L._AC_UY218_.jpg",
+      "stars": 4.8
+     },
+     {
+      "asin": "B0D6NN6TM7",
+      "title": "AMDRyzen\u2122 5 9600X 6-Core, 12-Thread Unlocked Desktop Processor",
+      "price": 179.59,
+      "url": "https://www.amazon.com/dp/B0D6NN6TM7",
+      "image": "https://m.media-amazon.com/images/I/61RfWUr4kvL._AC_UY218_.jpg",
+      "stars": 4.9
+     }
+    ],
+    "Motherboard": [
+     {
+      "asin": "B09K4QMPL9",
+      "title": "ASUS TUF Gaming B550-PLUS WiFi II AMD AM4 (3rd Gen Ryzen\u2122) ATX DDR4 Gaming Motherboard (PCIe 4.0, WiFi 6, 2.5Gb LAN, BIOS Flashback, USB 3.2 Gen 2, Addressable RGB Header and Aura Sync)",
+      "price": 121.13129,
+      "url": "https://www.amazon.com/dp/B09K4QMPL9",
+      "image": "https://m.media-amazon.com/images/I/81Wv4R9LRNL._AC_UY218_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B08LGKGBKT",
+      "title": "GIGABYTE B550 Gaming X V2 AMD AM4 ATX Motherboard, Supports Ryzen 5000/4000/3000 Series Processors, DDR4, 10+3 Power Phase, 2X M.2, PCIe 4.0, Front USB-C, GbE LAN, Q-Flash Plus, RGB Fusion",
+      "price": 99.99,
+      "url": "https://www.amazon.com/dp/B08LGKGBKT",
+      "image": "https://m.media-amazon.com/images/I/81A2DlnZuBL._AC_UY218_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B0DXWWWTH8",
+      "title": "GIGABYTE B550 Eagle WIFI6 AMD AM4 ATX Motherboard, Supports Ryzen 5000/4000/3000 Processors, DDR4, 10+3 Power Phase, 2X M.2, PCIe 4.0, USB-C, WIFI6, GbE LAN, PCIe EZ-Latch, EZ-Latch, RGB Fusion",
+      "price": 109.99,
+      "url": "https://www.amazon.com/dp/B0DXWWWTH8",
+      "image": "https://m.media-amazon.com/images/I/81HyYYlfU6L._AC_UY218_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B0H5PY7G2Y",
+      "title": "ASRock B550 Rock WiFi ATX Motherboard, AM4 Socket for Ryzen 3000-5000 CPUs, DDR4 4733+ (OC), PCIe 4.0, Triple M.2, 2.5G LAN, Wi-Fi 6E",
+      "price": 109.99,
+      "url": "https://www.amazon.com/dp/B0H5PY7G2Y",
+      "image": "https://m.media-amazon.com/images/I/61MEnGf5PfL._AC_UY218_.jpg",
+      "stars": 4.2
+     },
+     {
+      "asin": "B0BTTZFQTP",
+      "title": "GIGABYTE B550M K AMD AM4 Micro-ATX Motherboard, Supports Ryzen 5000/4000/3000 Series Processors, DDR4, 3+3 Power Phase, 2X M.2, PCIe 4.0, USB 3.2 Gen 1, GbE LAN, Q-Flash",
+      "price": 74.99,
+      "url": "https://www.amazon.com/dp/B0BTTZFQTP",
+      "image": "https://m.media-amazon.com/images/I/71Gm7vworoL._AC_UY218_.jpg",
+      "stars": 4.4
+     }
+    ],
+    "RAM": [
+     {
+      "asin": "B07N3XZ97B",
+      "title": "Patriot Viper Steel DDR4 RAM 8GB (1X8GB) 3200MHz CL16 Desktop Memory",
+      "price": 62.99,
+      "url": "https://www.amazon.com/dp/B07N3XZ97B",
+      "image": "https://m.media-amazon.com/images/I/81XNrcp5BKL._AC_UY218_.jpg",
+      "stars": 4.7
+     },
+     {
+      "asin": "B00FAY0S08",
+      "title": "TEAMGROUP Elite DDR3 16GB Kit (2x8GB) 1600MHz (PC3-12800) CL11 Unbuffered Non-ECC 1.5V UDIMM 240 Pin PC Computer Desktop Memory Module Ram Upgrade - TED316G1600C11DC01",
+      "price": 43.99,
+      "url": "https://www.amazon.com/dp/B00FAY0S08",
+      "image": "https://m.media-amazon.com/images/I/81F2qnrhIZL._AC_UY218_.jpg",
+      "stars": 4.7
+     },
+     {
+      "asin": "B09KP21Q1F",
+      "title": "PNY DDR4 8GB (1x8GB) 3200MHz CL22 Performance Desktop Memory",
+      "price": 54.99,
+      "url": "https://www.amazon.com/dp/B09KP21Q1F",
+      "image": "https://m.media-amazon.com/images/I/51v-ad9souL._AC_UY218_.jpg",
+      "stars": 4.4
+     },
+     {
+      "asin": "B07P5HX1C1",
+      "title": "Timetec 8GB DDR4 3200MHz (PC4-3200AA) PC4-25600 UDIMM Desktop RAM \u2013 288-Pin 1.2V CL22 Non-ECC Unbuffered DIMM Memory Module Upgrade",
+      "price": 58.99,
+      "url": "https://www.amazon.com/dp/B07P5HX1C1",
+      "image": "https://m.media-amazon.com/images/I/6108Gov-Q6L._AC_UY218_.jpg",
+      "stars": 3.9
+     },
+     {
+      "asin": "B07HFJLYTM",
+      "title": "Timetec 8GB DDR4 2666MHz (PC4-2666V) PC4-21300 UDIMM Desktop RAM \u2013 288-Pin 1.2V CL19 Non-ECC Unbuffered DIMM Memory Module Upgrade",
+      "price": 54.99,
+      "url": "https://www.amazon.com/dp/B07HFJLYTM",
+      "image": "https://m.media-amazon.com/images/I/614QRlQnWvL._AC_UY218_.jpg",
+      "stars": 4.5
+     }
+    ],
+    "Storage": [
+     {
+      "asin": "B0B55SWRCY",
+      "title": "fanxiang S500 Pro 256GB NVMe SSD M.2 PCIe 3.0, Gen 3x4 2280 Internal Solid State Drive, SLC Cache 3D NAND TLC, Up to 3000MB/s, Compatible with Laptop and PC Desktops(Black)",
+      "price": 53.99,
+      "url": "https://www.amazon.com/dp/B0B55SWRCY",
+      "image": "https://m.media-amazon.com/images/I/61zv9Ct-AEL._AC_UY218_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B0B55R7PYB",
+      "title": "fanxiang S500 Pro 512GB NVMe SSD M.2 PCIe Gen3x4 2280 Internal Solid State Drive, SLC Cache 3D NAND TLC, Up to 3200MB/s, Compatible with Laptop and PC Desktops(Black)",
+      "price": 86.38,
+      "url": "https://www.amazon.com/dp/B0B55R7PYB",
+      "image": "https://m.media-amazon.com/images/I/51vnFzFflAL._AC_UY218_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B0DMHS9HQ4",
+      "title": "Western Digital 500GB WD Green SN3000 NVMe Internal SSD - Solid State Drive - Gen4 PCIe, M.2 2280, Up to 5,000 MB/s - WDS500G4G0E",
+      "price": 95.99,
+      "url": "https://www.amazon.com/dp/B0DMHS9HQ4",
+      "image": "https://m.media-amazon.com/images/I/51ZzJ4gtlpL._AC_UY218_.jpg",
+      "stars": 4.7
+     },
+     {
+      "asin": "B082BJ4679",
+      "title": "Patriot P300 M.2 PCIe Gen 3 x4 512GB Low-Power Consumption SSD",
+      "price": 79.99,
+      "url": "https://www.amazon.com/dp/B082BJ4679",
+      "image": "https://m.media-amazon.com/images/I/613iKpN1xPL._AC_UY218_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B0CM8Q9X5W",
+      "title": "fanxiang 500GB NVMe SSD PCIe Gen4 M.2 SSD, Up to 4700 MB/s, Internal Gaming SSD for PS5, 3D NAND SLC Cache Solid State Drive Upgrade Storage for PC/Laptops S690Q",
+      "price": 86.39,
+      "url": "https://www.amazon.com/dp/B0CM8Q9X5W",
+      "image": "https://m.media-amazon.com/images/I/51pS27vJ21L._AC_UY218_.jpg",
+      "stars": 4.4
+     }
+    ],
+    "Graphics card": [
+     {
+      "asin": "B0CVCG2VPK",
+      "title": "ASUSDual GeForce RTX 3050 6GB GDDR6 OC Edition Gaming Graphics Card",
+      "price": 257.22,
+      "url": "https://www.amazon.com/dp/B0CVCG2VPK",
+      "image": "https://m.media-amazon.com/images/I/81mwcITtHBL._AC_UY218_.jpg",
+      "stars": 4.7
+     },
+     {
+      "asin": "B0CTJZCJH1",
+      "title": "msiGaming RTX 3050 LP 6G OC Graphics Card (NVIDIA RTX 3050, 96-Bit, Boost Clock: 1492 MHz, 6GB GDDR6 14 Gbps, HDMI/DP, Ampere Architecture)",
+      "price": 289.99,
+      "url": "https://www.amazon.com/dp/B0CTJZCJH1",
+      "image": "https://m.media-amazon.com/images/I/71LlSYcVPZL._AC_UY218_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B0CTK1SFVD",
+      "title": "msiGaming RTX 3050 Ventus 2X 6G OC Graphics Card (NVIDIA RTX 3050, 96-Bit, Boost Clock: 1492 MHz, 6GB GDDR6 14 Gbps, HDMI/DP, Ampere Architecture)",
+      "price": 259.95,
+      "url": "https://www.amazon.com/dp/B0CTK1SFVD",
+      "image": "https://m.media-amazon.com/images/I/81GGSRNirgL._AC_UY218_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B0DQK4XSC7",
+      "title": "GIGABYTEGeForce RTX 3050 WINDFORCE OC V2 6G Graphics Card, 2X WINDFORCE Fans, 6GB GDDR6 96-bit GDDR6, GV-N3050WF2OCV2-6GD Graphics Card",
+      "price": 249.99,
+      "url": "https://www.amazon.com/dp/B0DQK4XSC7",
+      "image": "https://m.media-amazon.com/images/I/713ZXD2ICaL._AC_UY218_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B0FFXT3TRD",
+      "title": "ASUSDual GeForce RTX 5050 8GB GDDR6 OC Edition Gaming Graphics Card",
+      "price": 419.99,
+      "url": "https://www.amazon.com/dp/B0FFXT3TRD",
+      "image": "https://m.media-amazon.com/images/I/71GhnAUiOZL._AC_UY218_.jpg",
+      "stars": 4.3
+     }
+    ],
+    "Power supply": [
+     {
+      "asin": "B0FST7VT5D",
+      "title": "ASRock PRO-650B Power Supply - 650W 80 Plus Bronze Certified, ATX 3.1 Ready, 120mm Fan, Full Protection Circuit, 3-Year Warranty",
+      "price": 44.99,
+      "url": "https://www.amazon.com/dp/B0FST7VT5D",
+      "image": "https://m.media-amazon.com/images/I/615IN3x3nsL._AC_UY218_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B0991TZ399",
+      "title": "MSI MAG A650BN, Non-Modular Compact 650W Power Supply, 80+ Bronze, Low-Noise Fan, Active PFC Design, 5 Year Warranty",
+      "price": 59.73,
+      "url": "https://www.amazon.com/dp/B0991TZ399",
+      "image": "https://m.media-amazon.com/images/I/81eLlIQ5PsL._AC_UY218_.jpg",
+      "stars": 4.7
+     },
+     {
+      "asin": "B0HH1Q6ZPG",
+      "title": "Power Supply 650W\uff0cATX PSU\uff0c80 PLUS Bronze Certified, 5 Year Warranty",
+      "price": 39.96,
+      "url": "https://www.amazon.com/dp/B0HH1Q6ZPG",
+      "image": "https://m.media-amazon.com/images/I/71iJER0HkDL._AC_UY218_.jpg",
+      "stars": 4.7
+     },
+     {
+      "asin": "B0FFPQ38QV",
+      "title": "Rosewill VSB 650W 80+ Bronze, ATX 3.0 & 3.1 Compatible, Semi-Modular Power Supply, PCIe 5.1 12V-2x6 Connector, 105\u00b0C/221\u00b0F Japanese Capacitor, 120mm ICB Silent Fan - 5 Year Warranty",
+      "price": 49.96,
+      "url": "https://www.amazon.com/dp/B0FFPQ38QV",
+      "image": "https://m.media-amazon.com/images/I/81fl8d-c9WL._AC_UY218_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B0FSTL4VDZ",
+      "title": "ASRock PRO-650G Power Supply - 650W 80 Plus Gold Certified, ATX 3.1 Ready, 120mm Fan, Full Protection Circuit, 3-Year Warranty",
+      "price": 49.99,
+      "url": "https://www.amazon.com/dp/B0FSTL4VDZ",
+      "image": "https://m.media-amazon.com/images/I/61c+XEDHswL._AC_UY218_.jpg",
+      "stars": 4.4
+     }
+    ],
+    "Case": [
+     {
+      "asin": "B0D2MK6NML",
+      "title": "NZXT H5 Flow - Compact ATX Mid-Tower PC Case - Black",
+      "price": 69.99,
+      "url": "https://www.amazon.com/dp/B0D2MK6NML",
+      "image": "https://m.media-amazon.com/images/I/51wAv5q4adL._AC_UY218_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B0C98RFQXJ",
+      "title": "Montech AIR 903 Series, E-ATX Mid Tower Case, High Airflow, Fans Pre-Installed Gaming case (Air 903 Base Black)",
+      "price": 65.0,
+      "url": "https://www.amazon.com/dp/B0C98RFQXJ",
+      "image": "https://m.media-amazon.com/images/I/81tjOKH4KML._AC_UY218_.jpg",
+      "stars": 4.7
+     },
+     {
+      "asin": "B0CB26ZFKV",
+      "title": "MONTECH AIR 903 MAX High-Airflow E-ATX Mid-Tower PC Case, 4 Fans, Black",
+      "price": 79.99,
+      "url": "https://www.amazon.com/dp/B0CB26ZFKV",
+      "image": "https://m.media-amazon.com/images/I/9149yphbYwL._AC_UY218_.jpg",
+      "stars": 4.8
+     },
+     {
+      "asin": "B0DMPFLHJZ",
+      "title": "ASUS A31 ATX Mid-Tower PC Case",
+      "price": 64.99,
+      "url": "https://www.amazon.com/dp/B0DMPFLHJZ",
+      "image": "https://m.media-amazon.com/images/I/81vreGd0PrL._AC_UY218_.jpg",
+      "stars": 4.7
+     },
+     {
+      "asin": "B0D4QVMBTP",
+      "title": "DARKROCK EC2 ATX Mid Tower Gaming Computer PC Case, Type-C Ready",
+      "price": 49.99,
+      "url": "https://www.amazon.com/dp/B0D4QVMBTP",
+      "image": "https://m.media-amazon.com/images/I/813M1+AB6kL._AC_UY218_.jpg",
+      "stars": 4.4
+     }
+    ]
+   }
+  },
+  {
+   "case": "text_christmas_200",
+   "kind": "general",
+   "request": "I need Christmas stuff for my apartment, $200",
+   "budget": 200,
+   "apify_runs": [
+    "lw3p29dQ7aAnOIDwR"
+   ],
+   "candidates": {
+    "small artificial Christmas tree 4 foot": [
+     {
+      "asin": "B00G5DIXJQ",
+      "title": "National Tree Company 4ft Unlit North Valley Spruce Mini Christmas Tree",
+      "price": 56.41,
+      "url": "https://www.amazon.com/dp/B00G5DIXJQ",
+      "image": "https://m.media-amazon.com/images/I/91JsZ9vGo4L._AC_UL320_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B0H1LZ5XNY",
+      "title": "4FT Prelit Norfolk Pine Tree, Christmas Tree with Lights (1 PC)",
+      "price": 58.996,
+      "url": "https://www.amazon.com/dp/B0H1LZ5XNY",
+      "image": "https://m.media-amazon.com/images/I/91jJJrgf+tL._AC_UL320_.jpg",
+      "stars": 4.4
+     },
+     {
+      "asin": "B0BCFNMTRV",
+      "title": "4ft Green Artificial Christmas Tree,Arbol de Navidad Small Fake Xmas Tree",
+      "price": 29.99,
+      "url": "https://www.amazon.com/dp/B0BCFNMTRV",
+      "image": "https://m.media-amazon.com/images/I/61JbH2SKuKL._AC_UL320_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B0GXBW3GRH",
+      "title": "4Ft Premium Artificial Small Mini Christmas Tree for Tabletop,Home, Office, Indoor and Outdoor Decor,Holiday Decoration,Easy Assembly Metal Hinges & Foldable Base 240 Branch Tips Green Tree",
+      "price": 26.99,
+      "url": "https://www.amazon.com/dp/B0GXBW3GRH",
+      "image": "https://m.media-amazon.com/images/I/81igMdPO-uL._AC_UL320_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B0C1SDZBFD",
+      "title": "4FT Artificial Small Christmas Tree Mini Tabletop Decor Green",
+      "price": 31.49,
+      "url": "https://www.amazon.com/dp/B0C1SDZBFD",
+      "image": "https://m.media-amazon.com/images/I/81LWdUCVaCL._AC_UL320_.jpg",
+      "stars": 4.5
+     }
+    ],
+    "warm white Christmas string lights indoor": [
+     {
+      "asin": "B09Z5YT94K",
+      "title": "Warm White Christmas Lights Outdoor, 20FT 100 Count Incandescent Christmas Light Indoor, Waterproof Christmas Tree String Lights for Xmas Decorations",
+      "price": 9.99,
+      "url": "https://www.amazon.com/dp/B09Z5YT94K",
+      "image": "https://m.media-amazon.com/images/I/71Wuo2qRTML._AC_UL320_.jpg",
+      "stars": 4.4
+     },
+     {
+      "asin": "B0CB3DPYR8",
+      "title": "Warm White Christmas Lights, 20FT 100 Count Incandescent White Wire Christmas Tree Lights, Waterproof Xmas String Lights for Outdoor Indoor Home Party Decorations",
+      "price": 9.99,
+      "url": "https://www.amazon.com/dp/B0CB3DPYR8",
+      "image": "https://m.media-amazon.com/images/I/71k-kVw7NEL._AC_UL320_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B0CS3QDXY6",
+      "title": "Meteds Christmas Lights 100 Count Clear White Wire UL Certified Connectable Warm White String Lights for Christmas Tree,Garland,Home,Patio, Wedding,Party,Festival Decor",
+      "price": 9.99,
+      "url": "https://www.amazon.com/dp/B0CS3QDXY6",
+      "image": "https://m.media-amazon.com/images/I/71EUC5iOXxL._AC_UL320_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B0GYCS97SZ",
+      "title": "Warm White Christmas String Lights, 12Ft 50 Incandescent Mini Bulbs, UL Certified, Indoor & Outdoor, Perfect for Christmas Tree, Wreath, Home, Yard, Wedding & Holiday Decor",
+      "price": 8.95,
+      "url": "https://www.amazon.com/dp/B0GYCS97SZ",
+      "image": "https://m.media-amazon.com/images/I/61Ndr1e3JCL._AC_UL320_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B09Z6J7CNB",
+      "title": "Warm White Christmas Lights, 2 Pack Total 40FT 200 Count Incandescent Christmas Mini Tree String Lights, Waterproof Christmas Decorations for Outdoor Indoor Xmas Patio Home Party Garden Yard Decor",
+      "price": 21.991,
+      "url": "https://www.amazon.com/dp/B09Z6J7CNB",
+      "image": "https://m.media-amazon.com/images/I/71-USGx036L._AC_UL320_.jpg",
+      "stars": 4.4
+     }
+    ],
+    "Christmas ornament set shatterproof": [
+     {
+      "asin": "B0FPM3P15R",
+      "title": "Napzy 24 Count Red Ornaments, Christmas Ball Set, Tree Decor Bulbs for Xmas",
+      "price": 17.99,
+      "url": "https://www.amazon.com/dp/B0FPM3P15R",
+      "image": "https://m.media-amazon.com/images/I/81fiSVNw6DL._AC_UL320_.jpg",
+      "stars": 4.4
+     },
+     {
+      "asin": "B0GT5F94PR",
+      "title": "SHareconn 66Pcs Christmas Tree Decorations, Christmas Tree Ornaments Set",
+      "price": 27.99,
+      "url": "https://www.amazon.com/dp/B0GT5F94PR",
+      "image": "https://m.media-amazon.com/images/I/81ThrTc8voL._AC_UL320_.jpg",
+      "stars": 4.4
+     },
+     {
+      "asin": "B087P4PJRT",
+      "title": "Valery Madelyn Christmas Ornaments Tree Decorations Set, 16ct Red and White Shatterproof Christmas Ball Ornaments Bulk, 2.36 Inch Traditional Hanging Ornaments for Xmas Trees Holiday Party Decor",
+      "price": 19.79,
+      "url": "https://www.amazon.com/dp/B087P4PJRT",
+      "image": "https://m.media-amazon.com/images/I/91WrvXle9fL._AC_UL320_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B0CSCYCMM4",
+      "title": "34PCS Champagne/White Christmas Ball Ornaments Set for Tree Decor",
+      "price": 25.19,
+      "url": "https://www.amazon.com/dp/B0CSCYCMM4",
+      "image": "https://m.media-amazon.com/images/I/81LW-APNNhL._AC_UL320_.jpg",
+      "stars": 4.7
+     },
+     {
+      "asin": "B0F7QYG84C",
+      "title": "30ct 1.57 Inch Champagne Gold Christmas Halloween Tree Ornament Set",
+      "price": 13.11,
+      "url": "https://www.amazon.com/dp/B0F7QYG84C",
+      "image": "https://m.media-amazon.com/images/I/819lpX8pyPL._AC_UL320_.jpg",
+      "stars": 4.2
+     }
+    ],
+    "Christmas wreath for front door": [
+     {
+      "asin": "B0HCMWV5CB",
+      "title": "Christmas Decorations Vintage Santa Hanging Wood Sign for Front Door Decor",
+      "price": 7.99,
+      "url": "https://www.amazon.com/dp/B0HCMWV5CB",
+      "image": "https://m.media-amazon.com/images/I/71zbUPj-8AL._AC_UL320_.jpg",
+      "stars": 4.7
+     },
+     {
+      "asin": "B0FJXYV6DM",
+      "title": "OUTXE Suction Cup Wreath Hanger, Upgraded Reef Hook",
+      "price": 9.984,
+      "url": "https://www.amazon.com/dp/B0FJXYV6DM",
+      "image": "https://m.media-amazon.com/images/I/61AZ7QQH55L._AC_UL320_.jpg",
+      "stars": 4.1
+     },
+     {
+      "asin": "B09CK5C6RH",
+      "title": "GP Life Wreath Hanger for Front Door, Adjustable from 15 to 25 Inches Hanger, 20 lbs Larger Door Upgrade Christmas Fall Wreaths Decorations Hook (Black)",
+      "price": 9.99,
+      "url": "https://www.amazon.com/dp/B09CK5C6RH",
+      "image": "https://m.media-amazon.com/images/I/71ml6OgWczL._AC_UL320_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B0FF4R9MN6",
+      "title": "16.5in Christmas Door Wreaths with Lights for Front Door, Battery Operated",
+      "price": 9.98,
+      "url": "https://www.amazon.com/dp/B0FF4R9MN6",
+      "image": "https://m.media-amazon.com/images/I/81kis8fNisL._AC_UL320_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B0FDPB67N8",
+      "title": "Christmas Wreath 24inch Christmas Wreaths for Front Door Xmas Red Berry Wreath with Eucalyptus Leaves Pine Cones Red Berries for Wall Window Indoor Outdoor Winter Decorations",
+      "price": 22.99,
+      "url": "https://www.amazon.com/dp/B0FDPB67N8",
+      "image": "https://m.media-amazon.com/images/I/71LCFGLhpmL._AC_UL320_.jpg",
+      "stars": 4.5
+     }
+    ],
+    "Christmas pine garland artificial": [
+     {
+      "asin": "B0FJ8GGTCH",
+      "title": "50FT Green Christmas Garland Decorations, Christmas Artificial Pine Greenery Garland Outdoor Indoor Decor, Straight Faux PVC Soft Garland for Stairs Railing Fireplace Window Mantle Home Party Decor",
+      "price": 9.97,
+      "url": "https://www.amazon.com/dp/B0FJ8GGTCH",
+      "image": "https://m.media-amazon.com/images/I/817zsvsQijL._AC_UL320_.jpg",
+      "stars": 4.4
+     },
+     {
+      "asin": "B0H86HSYJZ",
+      "title": "Christmas Garland,Garlands For Decoration,9Ft Cedar Garland,Christmas Decor",
+      "price": 19.792,
+      "url": "https://www.amazon.com/dp/B0H86HSYJZ",
+      "image": "https://m.media-amazon.com/images/I/81UCkaOjOrL._AC_UL320_.jpg",
+      "stars": 4.3
+     },
+     {
+      "asin": "B0BC6C8JVW",
+      "title": "Sggvecsy 48 Pcs Christmas Garland Ties Artificial Pine Needles Faux Pine Greenery Stems 14\u2019\u2019 Twist Wired Tree Branches for Christmas Holiday Decoration Craft Gift Wrapping",
+      "price": 9.99,
+      "url": "https://www.amazon.com/dp/B0BC6C8JVW",
+      "image": "https://m.media-amazon.com/images/I/A1940R5IKJL._AC_UL320_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B09G676BG6",
+      "title": "50Ft Christmas Garland for Decoration Artificial Wine Greenery Pine Garland",
+      "price": 9.99,
+      "url": "https://www.amazon.com/dp/B09G676BG6",
+      "image": "https://m.media-amazon.com/images/I/81pBkIN-r1L._AC_UL320_.jpg",
+      "stars": 4.4
+     },
+     {
+      "asin": "B0F2MMKBM6",
+      "title": "Alupssuc 9FT Christmas Norfolk Pine Garland, Soft Real Touch Mantle Decor",
+      "price": 19.992,
+      "url": "https://www.amazon.com/dp/B0F2MMKBM6",
+      "image": "https://m.media-amazon.com/images/I/81vNv-I8gUL._AC_UL320_.jpg",
+      "stars": 4.6
+     }
+    ],
+    "Christmas fleece throw blanket": [
+     {
+      "asin": "B0FK2VMH2D",
+      "title": "BEDELITE Christmas Throw Blanket for Decor & Gift, Red Snowflake, 50\"x60\"",
+      "price": 13.99,
+      "url": "https://www.amazon.com/dp/B0FK2VMH2D",
+      "image": "https://m.media-amazon.com/images/I/81NIyAcL8YL._AC_UL320_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B0HCHXNPRV",
+      "title": "Christmas Fleece Blanket Holiday Throw for Sofa Bed Home Decor",
+      "price": 18.99,
+      "url": "https://www.amazon.com/dp/B0HCHXNPRV",
+      "image": "https://m.media-amazon.com/images/I/91-Y6CAyMQL._AC_UL320_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B08HJ4CLP5",
+      "title": "PAVILIA Christmas Snowflake Throw Blanket, Red White Holiday Fleece, 50x60",
+      "price": 16.99,
+      "url": "https://www.amazon.com/dp/B08HJ4CLP5",
+      "image": "https://m.media-amazon.com/images/I/91B4RnClvJL._AC_UL320_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B08CV9SPPT",
+      "title": "BEAUTEX Christmas Sherpa Fleece Throw Blanket Soft Warm Buffalo Plaid",
+      "price": 17.99,
+      "url": "https://www.amazon.com/dp/B08CV9SPPT",
+      "image": "https://m.media-amazon.com/images/I/81FETPKxpzL._AC_UL320_.jpg",
+      "stars": 4.7
+     },
+     {
+      "asin": "B07ZB8QSM6",
+      "title": "Elegant Comfort Luxury Velvet Super Soft Christmas Prints Fleece Blanket-Holiday Theme Home D\u00e9cor Fuzzy Warm and Cozy Throws for Winter Bedding, Couch and Gift, 50 x 60 inch, Burgundy Reindeer",
+      "price": 17.99,
+      "url": "https://www.amazon.com/dp/B07ZB8QSM6",
+      "image": "https://m.media-amazon.com/images/I/91cfD5cmwGL._AC_UL320_.jpg",
+      "stars": 4.6
+     }
+    ],
+    "holiday scented candle set": [
+     {
+      "asin": "B0D9NJ799P",
+      "title": "Christmas Scented Candles for Home, 6 Pack Soy Set",
+      "price": 19.98,
+      "url": "https://www.amazon.com/dp/B0D9NJ799P",
+      "image": "https://m.media-amazon.com/images/I/71wJo6wB4WL._AC_UL320_.jpg",
+      "stars": 4.4
+     },
+     {
+      "asin": "B0H34JX91F",
+      "title": "Glade Jar Candle, Warm Apple & Spices, 4.08oz., 3 Count",
+      "price": 10.01,
+      "url": "https://www.amazon.com/dp/B0H34JX91F",
+      "image": "https://m.media-amazon.com/images/I/716pMhpol5L._AC_UL320_.jpg",
+      "stars": 4.3
+     },
+     {
+      "asin": "B0FJLXWHVW",
+      "title": "Christmas Candles Set for Home Scented, 4Pack 28oz, Soy Wax",
+      "price": 25.19,
+      "url": "https://www.amazon.com/dp/B0FJLXWHVW",
+      "image": "https://m.media-amazon.com/images/I/81i6O+n8CbL._AC_UL320_.jpg",
+      "stars": 4.3
+     },
+     {
+      "asin": "B0H4TMBHLV",
+      "title": "Scented Candles Set, 12 Pack Candles for Home Scented, Natural Soy Wax",
+      "price": 19.99,
+      "url": "https://www.amazon.com/dp/B0H4TMBHLV",
+      "image": "https://m.media-amazon.com/images/I/81mvMUa9UkL._AC_UL320_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B01MYTO3T4",
+      "title": "P&J Fragrance Oil Holiday Set for Christmas Home Decor | Mistletoe, Candy Cane, Wintermint, Apple Cider, Cranberry, and Forest Pine Candle Scents for Candle Making, Soap Making, Diffuser Oil Scent",
+      "price": 16.998,
+      "url": "https://www.amazon.com/dp/B01MYTO3T4",
+      "image": "https://m.media-amazon.com/images/I/81DswAqLsEL._AC_UL320_.jpg",
+      "stars": 4.5
+     }
+    ],
+    "Christmas stocking set of 2": [
+     {
+      "asin": "B0FH6K7NYK",
+      "title": "Fesciory Christmas Stockings, Cable Knit Family Stockings for Fireplace",
+      "price": 12.99,
+      "url": "https://www.amazon.com/dp/B0FH6K7NYK",
+      "image": "https://m.media-amazon.com/images/I/91n0HzqQ2VL._AC_UL320_.jpg",
+      "stars": 4.4
+     },
+     {
+      "asin": "B0D86JV9ZQ",
+      "title": "YOGINGO 2 Pack Christmas Stockings - Personalized Christmas Stockings, 18 Inches Large Christmas Stocking Hold All Surprises, Knitted Gift Stockings & Farmhouse Christmas Decor",
+      "price": 9.98,
+      "url": "https://www.amazon.com/dp/B0D86JV9ZQ",
+      "image": "https://m.media-amazon.com/images/I/71ylOwGIkmL._AC_UL320_.jpg",
+      "stars": 4.4
+     },
+     {
+      "asin": "B071WT8JYP",
+      "title": "Kurt Adler 20-inch Knit Reindeer Stockings 2 Assorted",
+      "price": 19.399,
+      "url": "https://www.amazon.com/dp/B071WT8JYP",
+      "image": "https://m.media-amazon.com/images/I/61uGwD1c46L._AC_UL320_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B0FH6RV4XH",
+      "title": "Fesciory Christmas Stockings, Cable Knit Family Stockings for Fireplace",
+      "price": 12.99,
+      "url": "https://www.amazon.com/dp/B0FH6RV4XH",
+      "image": "https://m.media-amazon.com/images/I/91WxKoQpTpL._AC_UL320_.jpg",
+      "stars": 4.4
+     },
+     {
+      "asin": "B097B49MSZ",
+      "title": "Christmas Stockings \uff0c18\" Unique Burgundy and Green Knit Christmas Stockings Dots Style (Length 18\",Pack 2)",
+      "price": 11.985,
+      "url": "https://www.amazon.com/dp/B097B49MSZ",
+      "image": "https://m.media-amazon.com/images/I/71v2g0pKiKL._AC_UL320_.jpg",
+      "stars": 4.4
+     }
+    ]
+   }
+  },
+  {
+   "case": "text_nature_room_150",
+   "kind": "general",
+   "request": "I need to fill my room with nature items, budget 150 dollars",
+   "budget": 150,
+   "apify_runs": [
+    "MOW5MFGxiMUaiJ84f",
+    "DtXHnmtzmJQ3PN4h5"
+   ],
+   "candidates": {
+    "live golden pothos houseplant": [
+     {
+      "asin": "B07TTJNM89",
+      "title": "Costa Farms Golden Pothos, Live Indoor Plant, Trailing Vine, Air Purifying",
+      "price": 19.97,
+      "url": "https://www.amazon.com/dp/B07TTJNM89",
+      "image": "https://m.media-amazon.com/images/I/71o+fW+C5lL._AC_UL320_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B09Y16XZG6",
+      "title": "Golden Pothos Plant Live House Plant Live Plants, Trailing Plants Live Houseplants, Golden Pothos Live Plant Houseplant, Live Pothos Devils Ivy Live Plant Money Plant Indoor Plants by Plants for Pets",
+      "price": 14.39,
+      "url": "https://www.amazon.com/dp/B09Y16XZG6",
+      "image": "https://m.media-amazon.com/images/I/71+9Wbp+z+L._AC_UL320_.jpg",
+      "stars": 4.4
+     },
+     {
+      "asin": "B0G15TK51J",
+      "title": "Live Golden Pothos, Indoor Vining Plant, Easy to Grow, 4\" Pot",
+      "price": 25.99,
+      "url": "https://www.amazon.com/dp/B0G15TK51J",
+      "image": "https://m.media-amazon.com/images/I/81fLKIGeu1L._AC_UL320_.jpg",
+      "stars": 4.4
+     },
+     {
+      "asin": "B07G7XLQ9M",
+      "title": "Costa Farms Golden Pothos, Live Indoor Plant, Trailing Vine, Air Purifying",
+      "price": 19.499,
+      "url": "https://www.amazon.com/dp/B07G7XLQ9M",
+      "image": "https://m.media-amazon.com/images/I/714BnMIXGCL._AC_UL320_.jpg",
+      "stars": 4.2
+     },
+     {
+      "asin": "B09XWWKRQW",
+      "title": "Live Pothos Plants (4PK) Indoor Plants Live Houseplants, Pothos Live Plant House Plants, Money Plant Indoor Pothos Plant Decor, Devils Ivy Trailing Plants Live by Plants for Pets,Black",
+      "price": 21.87,
+      "url": "https://www.amazon.com/dp/B09XWWKRQW",
+      "image": "https://m.media-amazon.com/images/I/71CJEvdqK1L._AC_UL320_.jpg",
+      "stars": 4.4
+     }
+    ],
+    "live boston fern houseplant": [],
+    "assorted mini succulent plants": [
+     {
+      "asin": "B09FKXRNFX",
+      "title": "32 Pcs Mini Fake Succulents, Small Artificial Faux Succulent Plants Decor",
+      "price": 19.99,
+      "url": "https://www.amazon.com/dp/B09FKXRNFX",
+      "image": "https://m.media-amazon.com/images/I/81eqnIwKCwL._AC_UL320_.jpg",
+      "stars": 4.4
+     },
+     {
+      "asin": "B077HNZVV1",
+      "title": "Supla 5 Pcs Assorted Artificial Succulents Plants Unpotted Small Green Cactus Echeveria Picks Fake Succulents Bulk for Succulent Garden Centerpiece Wreath Floral Arrangement Indoor Outdoor Home D\u00e9cor",
+      "price": 8.991,
+      "url": "https://www.amazon.com/dp/B077HNZVV1",
+      "image": "https://m.media-amazon.com/images/I/71yl0p+KXrL._AC_UL320_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B081C7CJQ6",
+      "title": "12 Pcs Artificial Succulents, Mini Fake Plants Unpotted",
+      "price": 12.591,
+      "url": "https://www.amazon.com/dp/B081C7CJQ6",
+      "image": "https://m.media-amazon.com/images/I/71qJwODDwmL._AC_UL320_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B07C746RGZ",
+      "title": "Supla 11 Pcs Mini Artificial Succulents Picks Unpotted Faux Succulent Assortment in Flocked Green in Different Type Different Size Succulents Echeveria Agave Floral Arrangement Mother Day' s Gift",
+      "price": 9.99,
+      "url": "https://www.amazon.com/dp/B07C746RGZ",
+      "image": "https://m.media-amazon.com/images/I/7160rQe7f5L._AC_UL320_.jpg",
+      "stars": 4.3
+     },
+     {
+      "asin": "B08QZDK87C",
+      "title": "FUNARTY 5pcs Artificial Succulent Plants, Small Fake Desk Plants Mini Succulents Indoor for Shelf Living Room Bedroom Windowsills Office Home Decoration (Include White Ceramic Pots)",
+      "price": 17.993,
+      "url": "https://www.amazon.com/dp/B08QZDK87C",
+      "image": "https://m.media-amazon.com/images/I/71MwSKCEmaL._AC_UL320_.jpg",
+      "stars": 4.6
+     }
+    ],
+    "dried flower bouquet pampas grass": [
+     {
+      "asin": "B0DNTDPMWX",
+      "title": "Dried Flower Bouquet - Pampas Grass, Bunny Tails, Olive Green Eucalyptus & Preserved Flowers - Boho Chic Home Decor, Rustic Wedding Centerpiece, Farmhouse Style Arrangement (Vase Not Included)",
+      "price": 12.98,
+      "url": "https://www.amazon.com/dp/B0DNTDPMWX",
+      "image": "https://m.media-amazon.com/images/I/81wZJLDqf+L._AC_UL320_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B0DK7CNW67",
+      "title": "200PCS Dried Flower Bouquet \u2013 Pampas Grass, Floral Decor for Home, Wedding, and Boho Style | Perfect for Vases, Fall, Spring, Summer, and Winter Arrangements",
+      "price": 17.98,
+      "url": "https://www.amazon.com/dp/B0DK7CNW67",
+      "image": "https://m.media-amazon.com/images/I/91iJF-Zc3rL._AC_UL320_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B0DK7DRJBY",
+      "title": "300 PCS Dried Flower Bouquet \u2013 Pampas Grass, Floral Decor for Home, Wedding, and Boho Style | Perfect for Vases, Fall, Spring, Summer, and Winter Arrangements",
+      "price": 25.18,
+      "url": "https://www.amazon.com/dp/B0DK7DRJBY",
+      "image": "https://m.media-amazon.com/images/I/91pKsTwleKL._AC_UL320_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B09H5JZC97",
+      "title": "Dried Pampas Grass Decor, 100 Stems Pampas Grass Contains Bunny Tails Dried Flowers, Reed Grass Bouquet for Wedding Boho Flowers Home Table Decor, Rustic Farmhouse Party (17\", White and Brown)",
+      "price": 10.78,
+      "url": "https://www.amazon.com/dp/B09H5JZC97",
+      "image": "https://m.media-amazon.com/images/I/7173mks7XtL._AC_UL320_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B0FXMT732H",
+      "title": "Bpole Dried Pampas Grass Bouquet -92 Pcs 11-13inch 9 Styles Boho Decor",
+      "price": 8.59,
+      "url": "https://www.amazon.com/dp/B0FXMT732H",
+      "image": "https://m.media-amazon.com/images/I/81CimfA+iSL._AC_UL320_.jpg",
+      "stars": 4.2
+     }
+    ],
+    "himalayan pink salt lamp": [
+     {
+      "asin": "B002LZUE76",
+      "title": "Himalayan Glow Salt Lamp with Touch Dimmer Switch, 5-7 lbs, Natural Pink Crystal, Wooden Base, Room Decor, Home Decor, Relaxation, Ambiance, Gift, Wellness",
+      "price": 28.48,
+      "url": "https://www.amazon.com/dp/B002LZUE76",
+      "image": "https://m.media-amazon.com/images/I/71nVTJi9nPL._AC_UL320_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B07D3GK8JK",
+      "title": "7 Inch Himalayan Salt Lamp with Dimmer Cord - Night Light Natural Crystal Rock Classic Wood Base Authentic from Pakistan",
+      "price": 29.95,
+      "url": "https://www.amazon.com/dp/B07D3GK8JK",
+      "image": "https://m.media-amazon.com/images/I/61-H+hJPS3L._AC_UL320_.jpg",
+      "stars": 4.7
+     },
+     {
+      "asin": "B0F8BZ33DY",
+      "title": "POHS 7 Inches,4-5 lbs, 100% Authentic Natural Himalayan Pink Salt Lamp, Hand Crafted Wooden Base, with on & Off Switch",
+      "price": 22.99,
+      "url": "https://www.amazon.com/dp/B0F8BZ33DY",
+      "image": "https://m.media-amazon.com/images/I/71SXOBALR7L._AC_UL320_.jpg",
+      "stars": 4.2
+     },
+     {
+      "asin": "B001892AX2",
+      "title": "WBM Salt Lamp - USB Himalayan Salt Lamp with Touch Dimmer Control, Natural Pink Crystal, 5-7 lbs, Wooden Base, LED Bulb, Room Decor, Home Decor, Relaxation, Ambiance, Gift",
+      "price": 24.99,
+      "url": "https://www.amazon.com/dp/B001892AX2",
+      "image": "https://m.media-amazon.com/images/I/71fKbPe9gML._AC_UL320_.jpg",
+      "stars": 4.3
+     },
+     {
+      "asin": "B07FW7TMFS",
+      "title": "Artnaturals Himalayan Salt Lamp with Wooden Base",
+      "price": 29.97,
+      "url": "https://www.amazon.com/dp/B07FW7TMFS",
+      "image": "https://m.media-amazon.com/images/I/71NxKfs56oL._AC_UL320_.jpg",
+      "stars": 4.6
+     }
+    ],
+    "macrame wall hanging boho natural": [
+     {
+      "asin": "B07K6BNJKK",
+      "title": "Handmade Cotton Home Decor Macrame Wall Hanging Khaki",
+      "price": 19.98,
+      "url": "https://www.amazon.com/dp/B07K6BNJKK",
+      "image": "https://m.media-amazon.com/images/I/811D-eaPNlL._AC_UL320_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B097B4N36X",
+      "title": "Macrame Wall Hanging Boho Moon Decor, Crescent Wooden Ornament with Tassel",
+      "price": 21.99,
+      "url": "https://www.amazon.com/dp/B097B4N36X",
+      "image": "https://m.media-amazon.com/images/I/61QHlvOSxLL._AC_UL320_.jpg",
+      "stars": 4.7
+     },
+     {
+      "asin": "B07PM5WDDL",
+      "title": "2Pcs Small Macrame Wall Hanging, 2 Sizes Boho Tapestry Wall Art Decor",
+      "price": 12.996,
+      "url": "https://www.amazon.com/dp/B07PM5WDDL",
+      "image": "https://m.media-amazon.com/images/I/81E+UYJ2naL._AC_UL320_.jpg",
+      "stars": 4.7
+     },
+     {
+      "asin": "B0D7SV65SX",
+      "title": "EaseMyKit Wall Hanging Decor Leaves Tapestry, Boho Wall Decor Woven Feather Handmade Yarn Tassels Leaf Macrame Wall Art Decorations for Living,Bedroom,Office,Nursery,Apartment Room,16x22 Inch(Brown)",
+      "price": 15.99,
+      "url": "https://www.amazon.com/dp/B0D7SV65SX",
+      "image": "https://m.media-amazon.com/images/I/71y+U0zYd6L._AC_UL320_.jpg",
+      "stars": 4.4
+     },
+     {
+      "asin": "B07KVHZ1TC",
+      "title": "Ebristar Macrame Wall Hanging - Boho Chic Handmade Woven Tapestry - Modern Rustic Wall Art Home Decor - Apartment Dorm Bedroom Nursery Wall Decoration, 10\" W x 39\" L - Off-White",
+      "price": 22.99,
+      "url": "https://www.amazon.com/dp/B07KVHZ1TC",
+      "image": "https://m.media-amazon.com/images/I/61TfsCffFnL._AC_UL320_.jpg",
+      "stars": 4.7
+     }
+    ],
+    "polished river rocks decorative": [
+     {
+      "asin": "B07F9LLC12",
+      "title": "Pebbles Polished Gravel, Natural Polished Mixed Color Stones,0.5-1.2inch Small Decorative River Rock Stones 2 Pounds (32-Oz)",
+      "price": 9.99,
+      "url": "https://www.amazon.com/dp/B07F9LLC12",
+      "image": "https://m.media-amazon.com/images/I/81eEeFUlFEL._AC_UL320_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B08TQYYWK3",
+      "title": "5 lbs River Rocks Pebbles for Indoor Plants, 1-2 Inch Aquarium Rock",
+      "price": 16.99,
+      "url": "https://www.amazon.com/dp/B08TQYYWK3",
+      "image": "https://m.media-amazon.com/images/I/71Czk2OoBKL._AC_UL320_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B0CTWRVT1N",
+      "title": "5 lbs Large River Rocks, 2-3 Inch Polished Pebble for Indoor Plants",
+      "price": 16.99,
+      "url": "https://www.amazon.com/dp/B0CTWRVT1N",
+      "image": "https://m.media-amazon.com/images/I/71Gafy2iajL._AC_UL320_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B0H1BT74WL",
+      "title": "1-2\" Polished Pebbles, Medium River Rocks for Potted Plants (5lb, White)",
+      "price": 15.19,
+      "url": "https://www.amazon.com/dp/B0H1BT74WL",
+      "image": "https://m.media-amazon.com/images/I/61SVfidOtnL._AC_UL320_.jpg",
+      "stars": 4.7
+     },
+     {
+      "asin": "B0915RNH3P",
+      "title": "RIFNY Decorative Polished Rocks, 0.3\" Gravel Rocks Crushed Crystal for Plant Flower Pots Succulents Cactus Bamboo Plant Vase Filler Aquarium Fish Tank Decorations and DIY Craft (1.5 LB, Color)",
+      "price": 13.99,
+      "url": "https://www.amazon.com/dp/B0915RNH3P",
+      "image": "https://m.media-amazon.com/images/I/81BZFT9ItAS._AC_UL320_.jpg",
+      "stars": 4.6
+     }
+    ],
+    "preserved moss wall art frame": [
+     {
+      "asin": "B0GLZRJSPW",
+      "title": "Mokof Preserved Moss Wall Art Decor, Forest Green, 17.3in, 2 Pack",
+      "price": 29.9915,
+      "url": "https://www.amazon.com/dp/B0GLZRJSPW",
+      "image": "https://m.media-amazon.com/images/I/81xBPw1RHTL._AC_UL320_.jpg",
+      "stars": 4.3
+     },
+     {
+      "asin": "B0GM11HKYL",
+      "title": "Mokof Preserved Moss Wall Art Decor, Moss Green, 17.3in, 2 Pack",
+      "price": 29.99,
+      "url": "https://www.amazon.com/dp/B0GM11HKYL",
+      "image": "https://m.media-amazon.com/images/I/81F0Fo4zjBL._AC_UL320_.jpg",
+      "stars": 4.3
+     },
+     {
+      "asin": "B0C8S1G7MM",
+      "title": "Preserved Reindeer Moss Natural Green DIY Kit Gardenning Art Wall Decor Florist Decor Easter Table Decor Wedding",
+      "price": 24.99,
+      "url": "https://www.amazon.com/dp/B0C8S1G7MM",
+      "image": "https://m.media-amazon.com/images/I/81WIDWmvRNL._AC_UL320_.jpg",
+      "stars": 4.3
+     },
+     {
+      "asin": "B0H6B6YTTM",
+      "title": "SiliFine 3 Pack Green Moss Wall Art Decor Panels, 16.5''x4.7\", Moss Green",
+      "price": 33.83,
+      "url": "https://www.amazon.com/dp/B0H6B6YTTM",
+      "image": "https://m.media-amazon.com/images/I/81iW0zkUITL._AC_UL320_.jpg",
+      "stars": 3.0
+     },
+     {
+      "asin": "B0D2H2HL54",
+      "title": "ACADOIT Moss ArtsFrame Crafts for Adults, 11\" Home Office Decor Living Wall Hanging Decor",
+      "price": 29.9,
+      "url": "https://www.amazon.com/dp/B0D2H2HL54",
+      "image": "https://m.media-amazon.com/images/I/61Hwbf7wVwL._AC_UL320_.jpg",
+      "stars": 4.5
+     }
+    ]
+   }
+  },
+  {
+   "case": "voice_pc_600",
+   "kind": "pc",
+   "request": "I want to make a PC setup with a budget of 600 dollars",
+   "budget": 600,
+   "apify_runs": [
+    "OW5yNDGPWWF9yQof7",
+    "f13m5wngCDkVx33RN"
+   ],
+   "candidates": {
+    "CPU": [
+     {
+      "asin": "B09VCJ171S",
+      "title": "AMDRyzen 5 5500 6-Core, 12-Thread Unlocked Desktop Processor with Wraith Stealth Cooler",
+      "price": 88.93,
+      "url": "https://www.amazon.com/dp/B09VCJ171S",
+      "image": "https://m.media-amazon.com/images/I/51So7GoGvxL._AC_UY218_.jpg",
+      "stars": 4.7
+     },
+     {
+      "asin": "B09VCHR1VH",
+      "title": "AMDRyzen 5 5600 6-Core, 12-Thread Unlocked Desktop Processor with Wraith Stealth Cooler",
+      "price": 152.99,
+      "url": "https://www.amazon.com/dp/B09VCHR1VH",
+      "image": "https://m.media-amazon.com/images/I/51So7GoGvxL._AC_UY218_.jpg",
+      "stars": 4.8
+     },
+     {
+      "asin": "B0BZH5ZLM9",
+      "title": "CPU AMD AM4 Ryzen 5 5500 Box",
+      "price": 99.0,
+      "url": "https://www.amazon.com/dp/B0BZH5ZLM9",
+      "image": "https://m.media-amazon.com/images/I/51aYMZBjsuL._AC_UY218_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B08166SLDF",
+      "title": "AMDRyzen 5 5600X 6-core, 12-thread unlocked desktop processor with Wraith Stealth cooler",
+      "price": 159.0,
+      "url": "https://www.amazon.com/dp/B08166SLDF",
+      "image": "https://m.media-amazon.com/images/I/51ld6RR8IrL._AC_UY218_.jpg",
+      "stars": 4.8
+     },
+     {
+      "asin": "B0D6NN6TM7",
+      "title": "AMDRyzen\u2122 5 9600X 6-Core, 12-Thread Unlocked Desktop Processor",
+      "price": 179.59,
+      "url": "https://www.amazon.com/dp/B0D6NN6TM7",
+      "image": "https://m.media-amazon.com/images/I/61RfWUr4kvL._AC_UY218_.jpg",
+      "stars": 4.9
+     }
+    ],
+    "Motherboard": [
+     {
+      "asin": "B08LGKGBKT",
+      "title": "GIGABYTE B550 Gaming X V2 AMD AM4 ATX Motherboard, Supports Ryzen 5000/4000/3000 Series Processors, DDR4, 10+3 Power Phase, 2X M.2, PCIe 4.0, Front USB-C, GbE LAN, Q-Flash Plus, RGB Fusion",
+      "price": 99.99,
+      "url": "https://www.amazon.com/dp/B08LGKGBKT",
+      "image": "https://m.media-amazon.com/images/I/81A2DlnZuBL._AC_UY218_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B0DXWWWTH8",
+      "title": "GIGABYTE B550 Eagle WIFI6 AMD AM4 ATX Motherboard, Supports Ryzen 5000/4000/3000 Processors, DDR4, 10+3 Power Phase, 2X M.2, PCIe 4.0, USB-C, WIFI6, GbE LAN, PCIe EZ-Latch, EZ-Latch, RGB Fusion",
+      "price": 109.99,
+      "url": "https://www.amazon.com/dp/B0DXWWWTH8",
+      "image": "https://m.media-amazon.com/images/I/81HyYYlfU6L._AC_UY218_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B09K4QMPL9",
+      "title": "ASUS TUF Gaming B550-PLUS WiFi II AMD AM4 (3rd Gen Ryzen\u2122) ATX DDR4 Gaming Motherboard (PCIe 4.0, WiFi 6, 2.5Gb LAN, BIOS Flashback, USB 3.2 Gen 2, Addressable RGB Header and Aura Sync)",
+      "price": 129.99,
+      "url": "https://www.amazon.com/dp/B09K4QMPL9",
+      "image": "https://m.media-amazon.com/images/I/81Wv4R9LRNL._AC_UY218_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B0H5PY7G2Y",
+      "title": "ASRock B550 Rock WiFi ATX Motherboard, AM4 Socket for Ryzen 3000-5000 CPUs, DDR4 4733+ (OC), PCIe 4.0, Triple M.2, 2.5G LAN, Wi-Fi 6E",
+      "price": 109.99,
+      "url": "https://www.amazon.com/dp/B0H5PY7G2Y",
+      "image": "https://m.media-amazon.com/images/I/61MEnGf5PfL._AC_UY218_.jpg",
+      "stars": 4.2
+     },
+     {
+      "asin": "B0CZQCTCPX",
+      "title": "ASUS Prime B550-PLUS AC-HES AMD AM4 (3rd Gen Ryzen) ATX DDR4 Motherboard (Dual M.2, PCIe4.0, WIFI5, 1Gb Ethernet, SATA 6 Gbps, USB 3.2 Gen 2 Type-C, Front USB 3.2 Gen 1 Type-C and CEC Tier II Ready)",
+      "price": 128.99,
+      "url": "https://www.amazon.com/dp/B0CZQCTCPX",
+      "image": "https://m.media-amazon.com/images/I/91PPIdi4xFL._AC_UY218_.jpg",
+      "stars": 4.5
+     }
+    ],
+    "RAM": [
+     {
+      "asin": "B09KP21Q1F",
+      "title": "PNY DDR4 8GB (1x8GB) 3200MHz CL22 Performance Desktop Memory",
+      "price": 54.99,
+      "url": "https://www.amazon.com/dp/B09KP21Q1F",
+      "image": "https://m.media-amazon.com/images/I/51v-ad9souL._AC_UY218_.jpg",
+      "stars": 4.4
+     },
+     {
+      "asin": "B07N3XZ97B",
+      "title": "Patriot Viper Steel DDR4 RAM 8GB (1X8GB) 3200MHz CL16 Desktop Memory",
+      "price": 62.99,
+      "url": "https://www.amazon.com/dp/B07N3XZ97B",
+      "image": "https://m.media-amazon.com/images/I/81XNrcp5BKL._AC_UY218_.jpg",
+      "stars": 4.7
+     },
+     {
+      "asin": "B0GXG25Q2D",
+      "title": "DIGIERA 8GB DDR4 Memory Module, 2666MHz DU260 UDIMM RAM 288-Pin Computer Memory, 1.2V CL19 Non-ECC Computer Internal Memory for Desktop",
+      "price": 44.98,
+      "url": "https://www.amazon.com/dp/B0GXG25Q2D",
+      "image": "https://m.media-amazon.com/images/I/61zKlCgYqDL._AC_UY218_.jpg",
+      "stars": 4.8
+     },
+     {
+      "asin": "B0FNBK3DK3",
+      "title": "KingSpec 8GB DDR4 RAM 3200MHz for Desktop - Plug-and-Play, Home & Office Use, Standard Version, 288-Pin DIMM CL18 1.35V Computer Memory Compatible with Most Intel/AMD PCs",
+      "price": 49.97,
+      "url": "https://www.amazon.com/dp/B0FNBK3DK3",
+      "image": "https://m.media-amazon.com/images/I/61VzR3bQJXL._AC_UY218_.jpg",
+      "stars": 4.7
+     },
+     {
+      "asin": "B07P5HX1C1",
+      "title": "Timetec 8GB DDR4 3200MHz (PC4-3200AA) PC4-25600 UDIMM Desktop RAM \u2013 288-Pin 1.2V CL22 Non-ECC Unbuffered DIMM Memory Module Upgrade",
+      "price": 58.99,
+      "url": "https://www.amazon.com/dp/B07P5HX1C1",
+      "image": "https://m.media-amazon.com/images/I/6108Gov-Q6L._AC_UY218_.jpg",
+      "stars": 3.9
+     }
+    ],
+    "Storage": [
+     {
+      "asin": "B0D1R5VQRG",
+      "title": "KingSpec SSD 512GB, M.2 NVMe Gen3x4 SSD 2280 - Up to 2400MB/s, Internal Solid State Drive with 3D NAND Flash, Compatible with Desktop and Laptop",
+      "price": 86.99,
+      "url": "https://www.amazon.com/dp/B0D1R5VQRG",
+      "image": "https://m.media-amazon.com/images/I/61AwEi1DPIL._AC_UY218_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B0B55SWRCY",
+      "title": "fanxiang S500 Pro 256GB NVMe SSD M.2 PCIe 3.0, Gen 3x4 2280 Internal Solid State Drive, SLC Cache 3D NAND TLC, Up to 3000MB/s, Compatible with Laptop and PC Desktops(Black)",
+      "price": 53.99,
+      "url": "https://www.amazon.com/dp/B0B55SWRCY",
+      "image": "https://m.media-amazon.com/images/I/61zv9Ct-AEL._AC_UY218_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B0B55R7PYB",
+      "title": "fanxiang S500 Pro 512GB NVMe SSD M.2 PCIe Gen3x4 2280 Internal Solid State Drive, SLC Cache 3D NAND TLC, Up to 3200MB/s, Compatible with Laptop and PC Desktops(Black)",
+      "price": 86.38,
+      "url": "https://www.amazon.com/dp/B0B55R7PYB",
+      "image": "https://m.media-amazon.com/images/I/51vnFzFflAL._AC_UY218_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B0B1HJV9VZ",
+      "title": "fanxiang S501 256GB NVMe SSD 3D NAND1.3 PCIe Gen3x4 M.2 2280 Internal Solid State Drive (Read Speed up to 2,050 MB/s) Compatible with Laptop & PC Desktop",
+      "price": 54.14,
+      "url": "https://www.amazon.com/dp/B0B1HJV9VZ",
+      "image": "https://m.media-amazon.com/images/I/61H8VKjiQ8L._AC_UY218_.jpg",
+      "stars": 4.4
+     },
+     {
+      "asin": "B0FGPVPQDB",
+      "title": "SIX X4000 512G M.2 SSD PCIe Gen3x4 NVME SSD Solid State Drive - Up to 3000MB/s Read, 1300MB/s Write",
+      "price": 89.99,
+      "url": "https://www.amazon.com/dp/B0FGPVPQDB",
+      "image": "https://m.media-amazon.com/images/I/71pI5V9fwjL._AC_UY218_.jpg",
+      "stars": 4.5
+     }
+    ],
+    "Graphics card": [
+     {
+      "asin": "B08VHWFWSD",
+      "title": "maxsunAMD Radeon RX 550 4GB GDDR5 ITX Computer PC Gaming Video Graphics Card GPU 128-Bit DirectX 12 PCI Express X16 3.0 DVI-D Dual Link, HDMI, DisplayPort",
+      "price": 112.99,
+      "url": "https://www.amazon.com/dp/B08VHWFWSD",
+      "image": "https://m.media-amazon.com/images/I/61XVfz1tHpL._AC_UY218_.jpg",
+      "stars": 4.4
+     },
+     {
+      "asin": "B09SKZSDRT",
+      "title": "maxsunAMD Radeon RX 550 4GB Low Profile Small Form Factor Video Graphics Card for Gaming Computer PC GPU GDDR5 ITX SFF HDPC 128-Bit DirectX 12 PCI Express X16 3.0, HDMI, DisplayPort",
+      "price": 121.99,
+      "url": "https://www.amazon.com/dp/B09SKZSDRT",
+      "image": "https://m.media-amazon.com/images/I/61+8-ktYXYL._AC_UY218_.jpg",
+      "stars": 4.3
+     },
+     {
+      "asin": "B0FSYKJLFB",
+      "title": "AMD Radeon RX 640 Graphics Card, 4GB, Low Profile, Dell GPU 6044M (Renewed)",
+      "price": 52.45,
+      "url": "https://www.amazon.com/dp/B0FSYKJLFB",
+      "image": "https://m.media-amazon.com/images/I/51ZTLWEwxsL._AC_UY218_.jpg",
+      "stars": 4.3
+     }
+    ],
+    "Power supply": [
+     {
+      "asin": "B0991W1HKT",
+      "title": "MSI MAG A550BN, Non-Modular Compact 550W Power Supply, 80+ Bronze, Low-Noise Fan, Active PFC Design, 5 Year Warranty",
+      "price": 49.99,
+      "url": "https://www.amazon.com/dp/B0991W1HKT",
+      "image": "https://m.media-amazon.com/images/I/81kjvnj0WkL._AC_UY218_.jpg",
+      "stars": 4.7
+     },
+     {
+      "asin": "B0FST7VT5D",
+      "title": "ASRock PRO-650B Power Supply - 650W 80 Plus Bronze Certified, ATX 3.1 Ready, 120mm Fan, Full Protection Circuit, 3-Year Warranty",
+      "price": 44.99,
+      "url": "https://www.amazon.com/dp/B0FST7VT5D",
+      "image": "https://m.media-amazon.com/images/I/615IN3x3nsL._AC_UY218_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B09Y826BQ4",
+      "title": "Power Supply 550W 80+ Bronze Certified PSU (ARESGAME, AGW550)",
+      "price": 40.99,
+      "url": "https://www.amazon.com/dp/B09Y826BQ4",
+      "image": "https://m.media-amazon.com/images/I/71yk7kdfkgL._AC_UY218_.jpg",
+      "stars": 4.4
+     },
+     {
+      "asin": "B0991TZ399",
+      "title": "MSI MAG A650BN, Non-Modular Compact 650W Power Supply, 80+ Bronze, Low-Noise Fan, Active PFC Design, 5 Year Warranty",
+      "price": 59.73,
+      "url": "https://www.amazon.com/dp/B0991TZ399",
+      "image": "https://m.media-amazon.com/images/I/81eLlIQ5PsL._AC_UY218_.jpg",
+      "stars": 4.7
+     },
+     {
+      "asin": "B014W3EM2W",
+      "title": "Thermaltake Smart 500W 80+ White Certified PSU, Continuous Power with 120mm Ultra Quiet Cooling Fan, ATX 12V V2.3/EPS 12V Active PFC Power Supply PS-SPD-0500NPCWUS-W",
+      "price": 39.99,
+      "url": "https://www.amazon.com/dp/B014W3EM2W",
+      "image": "https://m.media-amazon.com/images/I/61v6z9wYWyL._AC_UY218_.jpg",
+      "stars": 4.6
+     }
+    ],
+    "Case": [
+     {
+      "asin": "B0F2T66QC9",
+      "title": "Lian Li V100-ATX Mid-Tower PC Case-Black-V100RX",
+      "price": 74.99,
+      "url": "https://www.amazon.com/dp/B0F2T66QC9",
+      "image": "https://m.media-amazon.com/images/I/71rMfdhZejL._AC_UY218_.jpg",
+      "stars": 4.8
+     },
+     {
+      "asin": "B0GZYB9ZVB",
+      "title": "Zalman S6 High Airflow ATX Mid-Tower Gaming PC Case, 4 RGB Fans, Black",
+      "price": 64.99,
+      "url": "https://www.amazon.com/dp/B0GZYB9ZVB",
+      "image": "https://m.media-amazon.com/images/I/818tZb1dy8L._AC_UY218_.jpg",
+      "stars": 5.0
+     },
+     {
+      "asin": "B09MKNW18F",
+      "title": "MUSETEX ATX PC Case Pre-Install 6 PWM ARGB Fans, Polygonal Mesh Computer Gaming Case, Opening Tempered Glass Side Panel Mid-Tower Case, USB 3.0 x 2, Black, NN8",
+      "price": 62.99,
+      "url": "https://www.amazon.com/dp/B09MKNW18F",
+      "image": "https://m.media-amazon.com/images/I/812h2bIrglL._AC_UY218_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B0G8YXGFF2",
+      "title": "MUSETEX Y6 PC Case, Pre-Installed 4 Non-LED Fans, ATX Mid Tower Case, Computer Case with Type-C, 270\u00b0 Full View Tempered Glass, Black",
+      "price": 65.99,
+      "url": "https://www.amazon.com/dp/B0G8YXGFF2",
+      "image": "https://m.media-amazon.com/images/I/81J9RTScnML._AC_UY218_.jpg",
+      "stars": 4.7
+     },
+     {
+      "asin": "B0D2MK6NML",
+      "title": "NZXT H5 Flow - Compact ATX Mid-Tower PC Case - Black",
+      "price": 69.99,
+      "url": "https://www.amazon.com/dp/B0D2MK6NML",
+      "image": "https://m.media-amazon.com/images/I/51wAv5q4adL._AC_UY218_.jpg",
+      "stars": 4.6
+     }
+    ]
+   }
+  },
+  {
+   "case": "voice_office_250",
+   "kind": "general",
+   "request": "I need a desk and an office chair for 250 dollars",
+   "budget": 250,
+   "apify_runs": [
+    "2KYEvaBwGN0l0syWr"
+   ],
+   "candidates": {
+    "home office computer desk": [
+     {
+      "asin": "B0DNK2W9XN",
+      "title": "Vabches Farmhouse Executive Desk with Storage and Ample File Drawer, Rustic Large Home Writing Desk for Bedroom, White",
+      "price": 149.99,
+      "url": "https://www.amazon.com/dp/B0DNK2W9XN",
+      "image": "https://m.media-amazon.com/images/I/71IUHrcJF5L._AC_UL320_.jpg",
+      "stars": 4.2
+     },
+     {
+      "asin": "B0D5BMFK9S",
+      "title": "Lufeiya Computer Desk with File Drawers Cabinet, 47 Inch Reversible Home Office Desks with Filing Cabinet for Small Space, Gaming Study Writing Table PC Desks, Black",
+      "price": 79.99,
+      "url": "https://www.amazon.com/dp/B0D5BMFK9S",
+      "image": "https://m.media-amazon.com/images/I/712ZBhJ6RkL._AC_UL320_.jpg",
+      "stars": 4.4
+     },
+     {
+      "asin": "B0CS3K9CWC",
+      "title": "Huuger Computer Desk, 55 Inch Home Office Desk, Gaming Writing Work from Home Study Desk, Large Legroom, Sturdy Metal Frame, Modern Simple, Rustic Brown",
+      "price": 56.98,
+      "url": "https://www.amazon.com/dp/B0CS3K9CWC",
+      "image": "https://m.media-amazon.com/images/I/81WuudMU+0L._AC_UL320_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B0B41YH9B6",
+      "title": "ErGear 48 X 24 Inch Height Adjustable Electric Standing Desk, Black",
+      "price": 119.99,
+      "url": "https://www.amazon.com/dp/B0B41YH9B6",
+      "image": "https://m.media-amazon.com/images/I/718KkXOCktL._AC_UL320_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B0C4H1C4Z1",
+      "title": "Pamray 32 Inch Computer Desk for Small Spaces with Storage Bag, Home Office Work Desk with Headphone Hook, Small Office Desk Study Writing Table",
+      "price": 35.99,
+      "url": "https://www.amazon.com/dp/B0C4H1C4Z1",
+      "image": "https://m.media-amazon.com/images/I/71dZdL8c1rL._AC_UL320_.jpg",
+      "stars": 4.5
+     }
+    ],
+    "ergonomic office desk chair": [
+     {
+      "asin": "B0DGK4LBX9",
+      "title": "Office Chair, Ergonomic Desk Chairs 330LBS Capacity High Back Mesh Computer Chair with Flip-up Armrests, Comfy Work Chair with Adjustable Lumbar Support, Rolling Chair",
+      "price": 98.16,
+      "url": "https://www.amazon.com/dp/B0DGK4LBX9",
+      "image": "https://m.media-amazon.com/images/I/71oo11WQ9dL._AC_UL320_.jpg",
+      "stars": 4.1
+     },
+     {
+      "asin": "B0DGK8TG51",
+      "title": "Office Chair Ergonomic Desk Chair, 330LBS Capacity, High Back Computer Chair for Long Hours Comfortable, Rolling Swivel Executive Task Chair for Home Office with Flip-up Armrests, Black",
+      "price": 94.98,
+      "url": "https://www.amazon.com/dp/B0DGK8TG51",
+      "image": "https://m.media-amazon.com/images/I/710hqIp6uTL._AC_UL320_.jpg",
+      "stars": 4.0
+     },
+     {
+      "asin": "B0FR981Z25",
+      "title": "BrightSeat Ergonomic Office Chair Black [#1 in Value] Desk Chair | Black",
+      "price": 169.99,
+      "url": "https://www.amazon.com/dp/B0FR981Z25",
+      "image": "https://m.media-amazon.com/images/I/715aeP4pB4L._AC_UL320_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B0CP22DQQS",
+      "title": "Marsail Ergonomic Office Chair: Office Desk Chair with High Back Mesh and Adjustable Lumbar Support Rolling Work Swivel Task Chairs with Wheel 3D Armrests and Headrest",
+      "price": 129.99,
+      "url": "https://www.amazon.com/dp/B0CP22DQQS",
+      "image": "https://m.media-amazon.com/images/I/712kZm3lUrL._AC_UL320_.jpg",
+      "stars": 4.2
+     },
+     {
+      "asin": "B0D6GC9PKH",
+      "title": "YFO Home Office Desk Chair Office Rubber Casters Ergonomic Computer Chair with Lumbar Support Adjustable Height Rolling Swivel Executive Task Armrests Chair\uff0c Brown Leather",
+      "price": 179.99,
+      "url": "https://www.amazon.com/dp/B0D6GC9PKH",
+      "image": "https://m.media-amazon.com/images/I/71ISqRDvebL._AC_UL320_.jpg",
+      "stars": 4.6
+     }
+    ]
+   }
+  },
+  {
+   "case": "voice_headset_150",
+   "kind": "general",
+   "request": "I'd like a gaming headset and a mouse for 150 dollars",
+   "budget": 150,
+   "apify_runs": [
+    "P40LuiZNawmPdy68g"
+   ],
+   "candidates": {
+    "gaming headset with microphone": [
+     {
+      "asin": "B01H6GUCCQ",
+      "title": "BENGOO G9000 Stereo Gaming Headset for PS4 PC Xbox One PS5 Controller, Noise Cancelling Over Ear Headphones with Mic, LED Light, 7.1 Surround Sound, Soft Memory Earmuffs for Nintendo Xbox Series X|S",
+      "price": 19.95,
+      "url": "https://www.amazon.com/dp/B01H6GUCCQ",
+      "image": "https://m.media-amazon.com/images/I/61CGHv6kmWL._AC_UY218_.jpg",
+      "stars": 4.3
+     },
+     {
+      "asin": "B086PKMZ21",
+      "title": "Razer BlackShark V2 X Gaming Headset: 7.1 Surround Sound - 50mm Drivers - Memory Foam Cushion - For PC, PS4, PS5, Switch - 3.5mm Audio Jack - Black",
+      "price": 39.99,
+      "url": "https://www.amazon.com/dp/B086PKMZ21",
+      "image": "https://m.media-amazon.com/images/I/71-mnhc4Q8L._AC_UY218_.jpg",
+      "stars": 4.4
+     },
+     {
+      "asin": "B0DRM949PC",
+      "title": "JBL Quantum 100M2 Wired Gaming Headset, Detachable Mic - Black",
+      "price": 44.95,
+      "url": "https://www.amazon.com/dp/B0DRM949PC",
+      "image": "https://m.media-amazon.com/images/I/71wXaRKevmL._AC_UY218_.jpg",
+      "stars": 4.0
+     },
+     {
+      "asin": "B09TB15CTL",
+      "title": "Ozeino Gaming Headset for PC, Ps4, Ps5, Xbox Headset with 7.1 Surround Sound Gaming Headphones with Noise Canceling Mic, LED Light Over Ear Headphones for Switch, Xbox Series X/S, Laptop, Mobile White",
+      "price": 18.85,
+      "url": "https://www.amazon.com/dp/B09TB15CTL",
+      "image": "https://m.media-amazon.com/images/I/712OyBPPL0L._AC_UY218_.jpg",
+      "stars": 4.3
+     },
+     {
+      "asin": "B0GY8H6N33",
+      "title": "Gaming Headset for Xbox Series X|S Xbox One PS5 PS4 PC Switch Mac, Wired",
+      "price": 17.97,
+      "url": "https://www.amazon.com/dp/B0GY8H6N33",
+      "image": "https://m.media-amazon.com/images/I/71RL0a2K+wL._AC_UY218_.jpg",
+      "stars": 4.3
+     }
+    ],
+    "wired gaming mouse": [
+     {
+      "asin": "B08SJ5Z8JL",
+      "title": "Redragon M612 Wired RGB Optical Gaming Mouse 8000 DPI Remapping Keys",
+      "price": 16.99,
+      "url": "https://www.amazon.com/dp/B08SJ5Z8JL",
+      "image": "https://m.media-amazon.com/images/I/61mF42mh00L._AC_UY218_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B07HC4NBQ8",
+      "title": "Redragon M908 Wired MMO RGB Gaming Mouse 12400 DPI Remapping Keys",
+      "price": 27.99,
+      "url": "https://www.amazon.com/dp/B07HC4NBQ8",
+      "image": "https://m.media-amazon.com/images/I/61kI0PIuXVL._AC_UY218_.jpg",
+      "stars": 4.4
+     },
+     {
+      "asin": "B09C13PZX7",
+      "title": "Razer Basilisk V3 Customizable RGB Wired Ergonomic Gaming Mouse, Black",
+      "price": 34.99,
+      "url": "https://www.amazon.com/dp/B09C13PZX7",
+      "image": "https://m.media-amazon.com/images/I/61AcT0ZuO3L._AC_UY218_.jpg",
+      "stars": 4.6
+     },
+     {
+      "asin": "B094PS5RZQ",
+      "title": "Razer DeathAdder Essential Ergonomic Wired Gaming Mouse, Black",
+      "price": 20.98,
+      "url": "https://www.amazon.com/dp/B094PS5RZQ",
+      "image": "https://m.media-amazon.com/images/I/8189uwDnMkL._AC_UY218_.jpg",
+      "stars": 4.5
+     },
+     {
+      "asin": "B0C51J2ZXN",
+      "title": "Razer Cobra Wired Gaming Mouse, Gen-3 Optical Switches, 58g, Black",
+      "price": 34.95,
+      "url": "https://www.amazon.com/dp/B0C51J2ZXN",
+      "image": "https://m.media-amazon.com/images/I/61N55jovDVL._AC_UY218_.jpg",
+      "stars": 4.6
+     }
+    ]
+   }
+  }
+ ],
+ "note": "PC items use short category names, as the planner produces in the live app"
+}
