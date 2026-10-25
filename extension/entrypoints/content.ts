@@ -1,5 +1,5 @@
 import { PRODUCT_PATH, readCartAsins, readProduct } from '@/utils/amazon';
-import { guessCategory, matchCategory } from '@/utils/category';
+import { matchCategory } from '@/utils/category';
 import {
   GET_PRODUCT,
   PRODUCT_FOUND,
@@ -144,10 +144,11 @@ async function watchForCartConfirmation() {
     const plan = await planItem.getValue();
     // Without a project there's no checklist part to file it under
     if (!plan) return;
+    // Only a product that matches a part: a mouse pad would replace the CPU the user chose
+    const category = matchCategory(pending.product.title, plan.parts);
+    if (!category) return;
     // The user just chose this product, so it replaces whatever filled its part
-    await addToShortlist(guessCategory(pending.product.title, plan.parts), pending.product, {
-      fromCart: true,
-    });
+    await addToShortlist(category, pending.product, { fromCart: true });
   };
   const observer = onPageSettled(() => void confirmIfAdded());
   setTimeout(() => observer.disconnect(), timeLeft);
