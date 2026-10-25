@@ -63,7 +63,11 @@ class MatchCheck(BaseModel):
         "the request states; unconfirmed: the listing doesn't confirm a stated need; mismatch: "
         "the wrong kind of product (e.g. an accessory), or it clearly misses a stated need"
     )
-    reason: str = Field(description="One sentence on why, naming the need when one decides it")
+    reason: str = Field(
+        description="One short sentence, under 15 words, in plain words a shopper understands: "
+        "what the product is, or the stated need that decides it. Don't mention needs the request "
+        "doesn't state"
+    )
 
 
 class FitCheck(BaseModel):
@@ -75,8 +79,9 @@ class FitCheck(BaseModel):
         "the listings don't confirm a detail that decides whether they work together"
     )
     reason: str = Field(
-        description="One sentence on why they work together, the conflict, or which detail "
-        "the listings don't confirm"
+        description="One short sentence, under 15 words, in plain words a shopper understands, "
+        "saying what it means for them (e.g. 'The Intel i5-13600K won't fit this AMD board.'): "
+        "why they work together, the conflict, or which detail the listings don't confirm"
     )
 
 
