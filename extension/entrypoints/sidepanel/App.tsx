@@ -396,9 +396,11 @@ function App() {
 
   const product = page.status === 'product' ? page.product : null;
   const total = setup.reduce((sum, entry) => sum + entry.product.price, 0);
-  // What adding this product would add to the total
+  // What adding this product would do to the total: it replaces whatever fills its part
   const onShortlist = setup.some((entry) => entry.product.asin === product?.asin);
-  const change = product && !onShortlist ? product.price : 0;
+  const category = product && plan ? guessCategory(product.title, plan.parts) : '';
+  const replaced = setup.find((entry) => entry.category === category)?.product.price ?? 0;
+  const change = product && !onShortlist ? product.price - replaced : 0;
 
   return (
     <main className="app-shell">
@@ -498,7 +500,9 @@ function App() {
             {product && (
               <div className="summary-line summary-detail">
                 <span>Change from current</span>
-                <span>+${change.toFixed(2)}</span>
+                <span>
+                  {change < 0 ? '-' : '+'}${Math.abs(change).toFixed(2)}
+                </span>
               </div>
             )}
           </div>
