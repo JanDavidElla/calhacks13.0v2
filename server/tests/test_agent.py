@@ -13,6 +13,7 @@ from server.agent import (
     ask_claude,
     build,
     check_compatibility,
+    classify_product,
     evaluate,
     find_alternatives,
     find_other_stores,
@@ -27,6 +28,7 @@ from server.models import (
     BuildPlan,
     CandidateVerdict,
     CandidateVerdicts,
+    ClassifyRequest,
     Compatibility,
     CompatibilityCheck,
     EvaluateRequest,
@@ -38,6 +40,7 @@ from server.models import (
     OpenPart,
     OtherStoresRequest,
     PartChoice,
+    PartGuess,
     PartPick,
     PartPlan,
     Product,
@@ -84,6 +87,7 @@ class FakeClaude:
         candidate_verdicts: CandidateVerdicts | None = None,
         replan: Replan | None = None,
         same_items: SameItems | None = None,
+        part_guess: PartGuess | None = None,
     ) -> None:
         self.responses: dict[type[BaseModel], BaseModel | None] = {
             BuildPlan: plan,
@@ -93,6 +97,7 @@ class FakeClaude:
             CandidateVerdicts: candidate_verdicts,
             Replan: replan,
             SameItems: same_items,
+            PartGuess: part_guess,
         }
         self.prompts: list[str] = []
         self.efforts: list[str] = []
@@ -782,3 +787,37 @@ async def test_find_other_stores_skips_claude_when_no_store_has_it(monkeypatch: 
 
     assert result.offers == []
     assert claude.prompts == []
+
+
+DESK_PARTS = [
+    PartPlan(category="Office chair", search_query="ergonomic office chair", max_price=200),
+    PartPlan(category="Keyboard and mouse", search_query="wireless keyboard and mouse combo", max_price=50),
+]
+MOUSE = Product(asin="MOUSE1", title="Lekvey Ergonomic Mouse, Wireless Vertical Mouse for Office", price=19.99,
+                url="https://www.amazon.com/dp/MOUSE1")
+
+
+@pytest.mark.anyio
+async def test_classify_product_returns_the_part_claude_names(monkeypatch: pytest.MonkeyPatch) -> None:
+    claude = use_claude(monkeypatch, FakeClaude(part_guess=PartGuess(category="Keyboard and mouse")))
+    timings = Timings()
+
+    result = await classify_product(ClassifyRequest(request="a desk setup", product=MOUSE, parts=DESK_PARTS), timings)
+
+    assert result.category == "Keyboard and mouse"
+    assert 'Plan parts: ["Office chair", "Keyboard and mouse"]' in claude.prompts[0]
+    assert MOUSE.title in claude.prompts[0]
+    assert claude.efforts == [agent.CLASSIFY_EFFORT]
+    assert list(timings.durations_ms) == ["classify"]
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("guess", [None, "Mouse"], ids=["none-of-them", "made-up-part"])
+async def test_classify_product_returns_none_unless_claude_names_a_plan_part(
+    monkeypatch: pytest.MonkeyPatch, guess: str | None
+) -> None:
+    use_claude(monkeypatch, FakeClaude(part_guess=PartGuess(category=guess)))
+
+    result = await classify_product(ClassifyRequest(product=MOUSE, parts=DESK_PARTS))
+
+    assert result.category is None

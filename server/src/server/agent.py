@@ -15,6 +15,8 @@ from server.models import (
     BuildPlan,
     BuildResponse,
     CandidateVerdicts,
+    ClassifyRequest,
+    ClassifyResponse,
     Compatibility,
     EvaluateRequest,
     Evaluation,
@@ -22,6 +24,7 @@ from server.models import (
     OtherStoresRequest,
     OtherStoresResponse,
     PartChoice,
+    PartGuess,
     PartPlan,
     PlannedPart,
     PlanResponse,
@@ -46,6 +49,8 @@ PLAN_EFFORT: Effort = "low"
 PICK_EFFORT: Effort = "medium"
 # Telling a listing's model apart from another's is a quick read of two titles
 SAME_ITEM_EFFORT: Effort = "low"
+# Naming what kind of product a listing is takes no reasoning, and the score waits on it
+CLASSIFY_EFFORT: Effort = "low"
 # Each item is one Amazon search, so this also caps Apify cost per request
 MAX_ITEMS = 8
 MAX_ALTERNATIVES = 3
@@ -164,6 +169,14 @@ and model, and the same variant (capacity, size, color) when the Amazon title
 names one. Leave out different models (a Ryzen 5 5500GT is not a Ryzen 5 5500),
 bundles and kits with extra items (a camera with a lens is not the camera body),
 and complete systems that contain the product."""
+
+CLASSIFY_PROMPT = """You decide which part of a shopping plan an Amazon product is.
+Go by what the product is, not by the words its title uses to sell it: a
+"wireless ergonomic mouse for office" is a mouse, not an office chair, and a
+"monitor stand" is not a monitor. Choose the part the product would be bought
+for, even when it fills only some of it (a mouse alone fills "Keyboard and
+mouse"). Choose null when it's none of the parts, such as an accessory for a
+part or something the plan doesn't include. Copy the category exactly."""
 
 
 class BuildRejected(Exception):
@@ -341,6 +354,21 @@ async def evaluate(request: EvaluateRequest, timings: Timings | None = None) -> 
     # The setup items in covered parts would be replaced too, so checks against them don't count
     fits = [fit for fit in checks_on(request.category, verdict.checks) if not set(fit.parts) & set(covers)]
     return score_product(request.category, request.product, verdict.match, fits, max_price, covers)
+
+
+async def classify_product(request: ClassifyRequest, timings: Timings | None = None) -> ClassifyResponse:
+    """Which part of the plan the product is, or None when it isn't any of them."""
+    timings = timings or Timings()
+    categories = [part.category for part in request.parts]
+    product = json.dumps(request.product.model_dump(include={"title", "details"}, exclude_none=True))
+    with timings.measure("classify"):
+        guess = await ask_claude(
+            get_client(), CLASSIFY_EFFORT, CLASSIFY_PROMPT,
+            f"{request_line(request.request)}Plan parts: {json.dumps(categories)}\nProduct: {product}",
+            PartGuess,
+        )
+    # A category Claude made up counts as none, so the extension never scores against a missing part
+    return ClassifyResponse(category=guess.category if guess.category in categories else None)
 
 
 async def find_alternatives(request: AlternativesRequest, timings: Timings | None = None) -> AlternativesResponse:

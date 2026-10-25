@@ -59,6 +59,24 @@ export type Offer = {
   url: string;
 };
 
+// A part of the plan the user no longer has to buy, because of a product on their shortlist
+export type SkippedPart = {
+  category: string;
+  asin: string;
+  reason: string;
+};
+
+export type Replan = {
+  // Still to buy, each with its share of the budget that's left
+  parts: PlannedPart[];
+  // Done by a product bought for another part, like an iMac's built-in screen
+  filled: SkippedPart[];
+  // Made unnecessary by what the user chose, like a graphics card for a Mac
+  not_needed: SkippedPart[];
+  // Negative when over budget
+  remaining: number;
+};
+
 export type EvaluateRequest = {
   request: string;
   category: string;
@@ -80,6 +98,20 @@ export function createPlan(text: string): Promise<Plan> {
   const form = new FormData();
   form.set('text', text);
   return post('/api/plan', form);
+}
+
+// Which part of the plan the product is, or null when it isn't any of them. Asks Claude, so it's
+// for titles the word match in utils/category.ts can't settle
+export async function classifyProduct(plan: Plan, product: Product): Promise<string | null> {
+  const body = { request: plan.transcript, product, parts: plan.parts };
+  const result = await post<{ category: string | null }>('/api/classify', JSON.stringify(body));
+  return result.category;
+}
+
+// Sends the parts as first planned, so the server splits budgets from the original shares
+export function replan(plan: Plan, setup: SetupEntry[]): Promise<Replan> {
+  const body = { request: plan.transcript, budget: plan.budget, parts: plan.parts, setup };
+  return post('/api/replan', JSON.stringify(body));
 }
 
 export function evaluate(body: EvaluateRequest): Promise<Evaluation> {

@@ -133,6 +133,13 @@ class SameItems(BaseModel):
     indexes: list[int] = Field(description="Indexes of the listings that are the exact same product")
 
 
+class PartGuess(BaseModel):
+    category: str | None = Field(
+        description="The plan part this product would fill, copied exactly; null when it fills none "
+        "of them (e.g. a phone case for a desk setup)"
+    )
+
+
 # Amazon product data, from Apify search results or a product page the extension reads
 
 
@@ -271,3 +278,13 @@ class OtherStoresRequest(BaseModel):
 
 class OtherStoresResponse(BaseModel):
     offers: list[Offer]  # the same product at other stores, cheapest first
+
+
+class ClassifyRequest(BaseModel):
+    request: str | None = None  # the plan's transcript
+    product: Product  # the Amazon product the shopper is viewing
+    parts: list[PartPlan]  # the plan's parts to choose from
+
+
+class ClassifyResponse(BaseModel):
+    category: str | None  # one of the plan's categories; null when the product isn't any of them

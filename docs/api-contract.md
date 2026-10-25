@@ -11,6 +11,7 @@ file first so both sides stay in sync.
 | `POST /api/evaluate` | Ready |
 | `POST /api/alternatives` | Ready |
 | `POST /api/other-stores` | Ready |
+| `POST /api/replan` | Ready |
 
 The request and response shapes are already defined in `server/src/server/models.py`.
 
@@ -28,7 +29,9 @@ The request and response shapes are already defined in `server/src/server/models
 4. **Improve.** At the same time, the frontend calls `/api/alternatives` to get up to 3
    options that score higher, with the price difference. A conflict can also be fixed by
    changing the *other* part (see "Fixing the other part" below).
-5. **Add.** The user adds a product to their setup. Every later Evaluate checks against it.
+5. **Add.** The user adds a product to their setup. Every later Evaluate checks against it, and
+   `/api/replan` updates the checklist: it skips parts the setup already takes care of and
+   splits what's left of the budget across the rest.
 
 **The frontend keeps the user's state.** The server stores nothing between requests. Keep the
 plan and the setup (the products the user added) in `chrome.storage.local` (extension) or page
@@ -414,6 +417,83 @@ Expected time: 5–30 seconds for the search plus about 2 for Claude; each searc
 
 The server needs `BRIGHTDATA_API_KEY` in `server/.env` and a Bright Data SERP API zone named
 `serp_api1` (or `BRIGHTDATA_SERP_ZONE` set to the zone's name).
+
+## `POST /api/replan`
+
+Updates the checklist for what the user chose. Claude looks at each open part (one nothing in
+the setup was bought for) and decides whether a setup item already does its job, like an
+iMac's built-in screen for Monitor, or makes it unnecessary, like a graphics card for a Mac.
+What's left of the budget is then split across the parts still needed. JSON body: the plan as
+`/api/plan` returned it, plus the setup.
+
+```json
+{
+  "request": "a home office desk setup for $1,500",
+  "budget": 1500,
+  "parts": [
+    {"category": "Desktop computer", "search_query": "desktop computer", "max_price": 750},
+    {"category": "Monitor", "search_query": "27 inch monitor", "max_price": 280},
+    {"category": "Monitor arm", "search_query": "monitor arm", "max_price": 50},
+    {"category": "Desk", "search_query": "standing desk", "max_price": 400}
+  ],
+  "setup": [
+    {
+      "category": "Desktop computer",
+      "product": {
+        "asin": "B0CM5JV268",
+        "title": "Apple iMac 24-inch, M3 chip, 8GB RAM, 256GB SSD, Blue",
+        "price": 1149,
+        "url": "https://www.amazon.com/dp/B0CM5JV268"
+      }
+    }
+  ]
+}
+```
+
+**Always send the parts as `/api/plan` first returned them**, not an earlier replan's. Budgets
+are split from the original shares, so sending updated ones would shrink them twice. Extra
+fields, such as each part's `search_url`, are ignored.
+
+Response:
+
+```json
+{
+  "parts": [
+    {
+      "category": "Desk",
+      "search_query": "standing desk",
+      "max_price": 331.0,
+      "search_url": "https://www.amazon.com/s?k=standing+desk&rh=p_36%3A-49650"
+    }
+  ],
+  "filled": [
+    {"category": "Monitor", "asin": "B0CM5JV268", "reason": "Your iMac has a built-in 24-inch screen."}
+  ],
+  "not_needed": [
+    {"category": "Monitor arm", "asin": "B0CM5JV268", "reason": "The iMac's built-in stand doesn't attach to a monitor arm."}
+  ],
+  "remaining": 351.0
+}
+```
+
+- `parts`: still to buy, each with its share of the budget that's left and a search link for it
+- `filled`: done by a setup item bought for another part; `asin` is that item
+- `not_needed`: the setup's choices made the part unnecessary
+- `remaining`: the plan's budget minus the setup's total, negative when over budget
+
+Only the budget the plan gave its parts is split, so a plan that left some of its budget
+unspent keeps that slack in `remaining`. Over budget, every part's `max_price` is 0, but its
+search link keeps the first budget so it still finds something. A part is only skipped for a
+setup item Claude names by ASIN, so a made-up answer keeps the part on the list.
+
+Show what changed above the checklist, with each skipped part's `reason`; the side panel puts
+it in a card on the List tab. With an empty setup, nothing changes, so there's no need to call.
+
+To score a product against what a setup item fills, send the item's skipped parts as its
+`covers` in `/api/evaluate`'s setup: `{"category": "Desktop computer", "covers": ["Monitor"], "product": ...}`.
+
+Expected time: one Claude call at the same effort as `/api/plan`, and none when the setup is
+empty or every part is on it.
 
 ## Errors
 

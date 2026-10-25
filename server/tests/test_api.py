@@ -16,6 +16,8 @@ from server.models import (
     AlternativesResponse,
     BuildPart,
     BuildResponse,
+    ClassifyRequest,
+    ClassifyResponse,
     Compatibility,
     CompatibilityCheck,
     EvaluateRequest,
@@ -500,6 +502,43 @@ def test_replan_returns_the_plan_update_in_documented_format(monkeypatch: pytest
 
 def test_replan_needs_a_budget() -> None:
     response = client.post("/api/replan", json={k: v for k, v in REPLAN_BODY.items() if k != "budget"})
+
+    assert response.status_code == 422
+
+
+CLASSIFY_BODY = {
+    "request": "a desk setup for $800",
+    "product": {"asin": "MOUSE1", "title": "Lekvey Ergonomic Mouse, Wireless Vertical Mouse for Office",
+                "price": 19.99, "url": "https://www.amazon.com/dp/MOUSE1"},
+    "parts": [{"category": "Office chair", "search_query": "ergonomic office chair", "max_price": 200},
+              {"category": "Keyboard and mouse", "search_query": "wireless keyboard and mouse", "max_price": 50}],
+}
+
+
+@pytest.mark.parametrize("category", ["Keyboard and mouse", None], ids=["a-part", "none-of-them"])
+def test_classify_returns_the_part_in_documented_format(
+    monkeypatch: pytest.MonkeyPatch, category: str | None
+) -> None:
+    received: list[ClassifyRequest] = []
+
+    async def fake_classify(request: ClassifyRequest, timings: Timings) -> ClassifyResponse:
+        received.append(request)
+        with timings.measure("classify"):
+            pass
+        return ClassifyResponse(category=category)
+
+    monkeypatch.setattr(main, "classify_product", fake_classify)
+
+    response = client.post("/api/classify", json=CLASSIFY_BODY)
+
+    assert response.status_code == 200
+    assert response.json() == {"category": category}
+    assert [p.category for p in received[0].parts] == ["Office chair", "Keyboard and mouse"]
+    assert server_timing_stages(response) == ["classify", "total"]
+
+
+def test_classify_needs_the_plan_parts() -> None:
+    response = client.post("/api/classify", json={k: v for k, v in CLASSIFY_BODY.items() if k != "parts"})
 
     assert response.status_code == 422
 

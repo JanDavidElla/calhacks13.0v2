@@ -13,6 +13,7 @@ from server.agent import (
     SearchFailed,
     build,
     check_compatibility,
+    classify_product,
     evaluate,
     find_alternatives,
     find_other_stores,
@@ -24,6 +25,8 @@ from server.models import (
     AlternativesRequest,
     AlternativesResponse,
     BuildResponse,
+    ClassifyRequest,
+    ClassifyResponse,
     Compatibility,
     CompatibilityRequest,
     EvaluateRequest,
@@ -120,6 +123,19 @@ async def update_plan(request: ReplanRequest, response: Response) -> ReplanRespo
     timings = Timings()
     with timings.measure("total"), agent_errors():
         result = await cached("replan", request, ReplanResponse, lambda: replan(request, timings), timings)
+
+    response.headers["Server-Timing"] = timings.header()
+    return result
+
+
+@app.post("/api/classify")
+async def classify(request: ClassifyRequest, response: Response) -> ClassifyResponse:
+    """Say which part of the plan the product is, for when its title doesn't make that clear."""
+    timings = Timings()
+    with timings.measure("total"), agent_errors():
+        result = await cached(
+            "classify", request, ClassifyResponse, lambda: classify_product(request, timings), timings
+        )
 
     response.headers["Server-Timing"] = timings.header()
     return result

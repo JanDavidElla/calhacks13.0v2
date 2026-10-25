@@ -327,6 +327,14 @@ button {
   color: #99721f;
 }
 
+/* Neutral, since a plan update is news rather than a pass or a problem; a shade darker than the
+   bubble so it stands out from it */
+.disclosure-info {
+  border-color: #dcd5c8;
+  background: #f6efe3;
+  color: #8a4a1f;
+}
+
 .disclosure-heading {
   width: 100%;
   justify-content: space-between;
@@ -344,6 +352,21 @@ button {
 
 .chevron-closed {
   transform: rotate(-90deg);
+}
+
+/* The bubble's text is smaller than the panel's, so both sizes are set: the title matches its
+   other labels, like "Still needed", and the summary sits just under it */
+.plan-changes-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+}
+
+.plan-changes-title small {
+  color: #5c4a3a;
+  font-size: 11px;
+  font-weight: 400;
 }
 
 .disclosure-detail {

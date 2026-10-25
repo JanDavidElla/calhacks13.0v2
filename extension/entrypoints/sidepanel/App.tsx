@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import planeLogo from '@/assets/default.png';
-import type { Check, Plan, SetupEntry } from '@/utils/api';
+import type { Check, Plan, Replan, SetupEntry } from '@/utils/api';
 import { GET_PRODUCT, PRODUCT_FOUND, type Product, type ProductFoundMessage } from '@/utils/page';
-import { guessCategory } from '@/utils/category';
 import {
   addToShortlist,
   cartCountItem,
@@ -18,6 +17,8 @@ import RequestForm from './RequestForm';
 import { useAlternatives, type AlternativesState } from './useAlternatives';
 import { useEvaluation, type EvaluationState } from './useEvaluation';
 import { useOtherStores, type OtherStoresState } from './useOtherStores';
+import { usePart, type PartState } from './usePart';
+import { useReplan, type ReplanState } from './useReplan';
 import { useShortlistScores, type ShortlistScores } from './useShortlistScores';
 import { useStoredItem } from './useStoredItem';
 
@@ -112,9 +113,31 @@ function ScoreCard({ product, state }: ScoreCardProps) {
           <p className="score-summary">{worst?.reason ?? 'Fits your project.'}</p>
         </>
       )}
-      <div className="product-row">
-        <strong>{product.title}</strong>
-        <span>${product.price.toFixed(2)}</span>
+      <ProductRow product={product} />
+    </div>
+  );
+}
+
+function ProductRow({ product }: { product: Product }) {
+  return (
+    <div className="product-row">
+      <strong>{product.title}</strong>
+      <span>${product.price.toFixed(2)}</span>
+    </div>
+  );
+}
+
+// Instead of a score: judged as a part it isn't, any product scores badly
+function NotOnPlan({ product }: { product: Product }) {
+  return (
+    <div className="fit-card">
+      <div className="score-card">
+        <div className="score">–</div>
+        <p className="score-label">Not on your plan</p>
+        <p className="score-summary">
+          This isn&apos;t any of the parts in your plan, so there&apos;s nothing to score it against.
+        </p>
+        <ProductRow product={product} />
       </div>
     </div>
   );
@@ -208,17 +231,43 @@ function OtherStores({ product, state }: OtherStoresProps) {
   );
 }
 
-type ProductFitProps = {
+type ProductViewProps = {
   product: Product;
   plan: Plan;
   setup: SetupEntry[];
+  part: PartState;
   onEvaluation: (state: EvaluationState | null) => void;
 };
 
-// Analyzes the product as soon as its page opens; the parent keys it by ASIN
-function ProductFit({ product, plan, setup, onEvaluation }: ProductFitProps) {
-  const category = guessCategory(product.title, plan.parts);
-  const part = plan.parts.find((candidate) => candidate.category === category) ?? plan.parts[0];
+// Works out which part the product is before analyzing it; the parent keys it by ASIN
+function ProductView({ part, ...props }: ProductViewProps) {
+  const { product, onEvaluation } = props;
+  const deciding = part.status === 'loading';
+  // The bear starts thinking while the part is worked out, not only once the analysis starts
+  useEffect(() => {
+    if (!deciding) return;
+    onEvaluation({ status: 'loading' });
+    return () => onEvaluation(null);
+  }, [deciding, onEvaluation]);
+
+  if (part.status !== 'done') {
+    // The analysis card's loading and error views, since this is the first step of it
+    const state: EvaluationState = deciding ? { status: 'loading' } : part;
+    return (
+      <div className="fit-card">
+        <ScoreCard product={product} state={state} />
+      </div>
+    );
+  }
+  if (part.category === null) return <NotOnPlan product={product} />;
+  return <ProductFit {...props} category={part.category} />;
+}
+
+type ProductFitProps = Omit<ProductViewProps, 'part'> & { category: string };
+
+// Analyzes the product as soon as its part is known
+function ProductFit({ product, plan, setup, category, onEvaluation }: ProductFitProps) {
+  const part = plan.parts.find((candidate) => candidate.category === category);
   const state = useEvaluation(product, plan.transcript, part, setup);
   // The bear lives outside the bubble, so it hears about the analysis from here
   useEffect(() => {
@@ -350,19 +399,101 @@ function SpeechBubble({ children }: { children: ReactNode }) {
   );
 }
 
+function plural(count: number, word: string): string {
+  return `${count} ${count === 1 ? word : `${word}s`}`;
+}
+
+// The one line under the card's title, like "2 parts skipped · budgets re-split"
+function changeSummary({ parts, filled, not_needed, remaining }: Replan): string {
+  const skipped = filled.length + not_needed.length;
+  const changes = [];
+  if (skipped > 0) changes.push(`${plural(skipped, 'part')} skipped`);
+  if (remaining < 0) changes.push('over budget');
+  else if (parts.length > 0) changes.push('budgets re-split');
+  return changes.join(' · ') || 'nothing left to buy';
+}
+
+function budgetNote({ parts, remaining }: Replan): string {
+  const left = parts.reduce((sum, part) => sum + part.max_price, 0);
+  if (parts.length === 0) {
+    return remaining < 0
+      ? `Every part is taken care of, but you're $${Math.abs(remaining).toFixed(0)} over budget.`
+      : `Every part is taken care of, with $${remaining.toFixed(0)} of your budget left over.`;
+  }
+  if (remaining < 0) {
+    return `You're $${Math.abs(remaining).toFixed(0)} over budget, so there's nothing left to split across the ${plural(parts.length, 'part')} still needed.`;
+  }
+  const [only] = parts;
+  if (only && parts.length === 1) return `The $${left.toFixed(0)} left all goes to the ${only.category}.`;
+  return `The $${left.toFixed(0)} left is split across the ${parts.length} parts still needed, each keeping its share of the original plan.`;
+}
+
+// Explains how the plan changed for what's on the shortlist, above the list it changed
+function PlanChanges({ state }: { state: ReplanState }) {
+  const [open, setOpen] = useState(false);
+
+  if (state.status === 'idle') return null;
+  if (state.status === 'loading') {
+    return <p className="page-hint">Updating your plan for what you chose…</p>;
+  }
+  if (state.status === 'failed') {
+    return (
+      <p className="page-hint">Couldn&apos;t update your plan this time, so these are its first budgets.</p>
+    );
+  }
+
+  const { filled, not_needed } = state.replan;
+  return (
+    <div className="disclosure disclosure-info">
+      <button
+        className="disclosure-heading"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+      >
+        <span className="plan-changes-title">
+          gomdori updated your plan
+          <small>{changeSummary(state.replan)}</small>
+        </span>
+        <span className={`chevron ${open ? '' : 'chevron-closed'}`} aria-hidden="true">
+          ⌄
+        </span>
+      </button>
+      {open && (
+        <ul className="disclosure-detail">
+          {filled.map((part) => (
+            <li key={part.category}>
+              <strong>{part.category}</strong>: skip it. {part.reason}
+            </li>
+          ))}
+          {not_needed.map((part) => (
+            <li key={part.category}>
+              <strong>{part.category}</strong>: not needed. {part.reason}
+            </li>
+          ))}
+          <li>{budgetNote(state.replan)}</li>
+        </ul>
+      )}
+    </div>
+  );
+}
+
 type ShortlistProps = {
   plan: Plan;
   setup: ShortlistEntry[];
   ratings: ShortlistScores;
+  replan: ReplanState;
 };
 
-function Shortlist({ plan, setup, ratings }: ShortlistProps) {
-  const unfilled = plan.parts.filter(
-    (part) => !setup.some((entry) => entry.category === part.category),
-  );
+function Shortlist({ plan, setup, ratings, replan }: ShortlistProps) {
+  // The updated plan once it's back; until then, or if it failed, the parts nothing was chosen for
+  const stillNeeded =
+    replan.status === 'done'
+      ? replan.replan.parts
+      : plan.parts.filter((part) => !setup.some((entry) => entry.category === part.category));
 
   return (
     <>
+      <PlanChanges state={replan} />
       {setup.length === 0 ? (
         <p className="page-hint">Nothing on your list yet. Add a product from its page.</p>
       ) : (
@@ -377,11 +508,11 @@ function Shortlist({ plan, setup, ratings }: ShortlistProps) {
           ))}
         </ul>
       )}
-      {unfilled.length > 0 && (
+      {stillNeeded.length > 0 && (
         <div className="shortlist-unfilled">
           <span>Still needed</span>
           <ul>
-            {unfilled.map((part) => (
+            {stillNeeded.map((part) => (
               <li key={part.category}>
                 <a href={part.search_url} target="_blank" rel="noreferrer">
                   ${part.max_price.toFixed(0)} · {part.category} 
@@ -408,6 +539,11 @@ function App() {
   const cartCount = useStoredItem(cartCountItem) ?? 0;
   // Here, not in the list, so cart items are rated before the list is opened
   const ratings = useShortlistScores(plan, setup);
+  // Also here, so the updated plan is usually ready by the time the list is opened
+  const replan = useReplan(plan, setup);
+  const product = page.status === 'product' ? page.product : null;
+  // Here, not in the product view, so the summary below knows which part the product would fill
+  const part = usePart(product, plan);
 
   useEffect(() => {
     // This panel's window: messages and tab events from other windows are ignored
@@ -453,11 +589,10 @@ function App() {
     };
   }, []);
 
-  const product = page.status === 'product' ? page.product : null;
   const total = setup.reduce((sum, entry) => sum + entry.product.price, 0);
   // What adding this product would do to the total: it replaces whatever fills its part
   const onShortlist = setup.some((entry) => entry.product.asin === product?.asin);
-  const category = product && plan ? guessCategory(product.title, plan.parts) : '';
+  const category = part.status === 'done' ? part.category : null;
   const replaced = setup.find((entry) => entry.category === category)?.product.price ?? 0;
   const change = product && !onShortlist ? product.price - replaced : 0;
   const score = evaluation?.status === 'done' ? evaluation.evaluation.score : null;
@@ -548,13 +683,14 @@ function App() {
           // Keyed by what it shows, so another tab or product starts scrolled to the top
           <SpeechBubble key={tab === 'shortlist' ? tab : (product?.asin ?? page.status)}>
             {tab === 'shortlist' ? (
-              <Shortlist plan={plan} setup={setup} ratings={ratings} />
+              <Shortlist plan={plan} setup={setup} ratings={ratings} replan={replan} />
             ) : product ? (
-              <ProductFit
+              <ProductView
                 key={product.asin}
                 product={product}
                 plan={plan}
                 setup={setup}
+                part={part}
                 onEvaluation={setEvaluation}
               />
             ) : page.status === 'loading' ? (
@@ -592,7 +728,8 @@ function App() {
                 the pencil to set your own.
               </p>
             )}
-            {product && (
+            {/* Only once the product's part is known, since it can't be added otherwise */}
+            {product && category && (
               <div className="summary-line summary-detail">
                 <span>Change from current</span>
                 <span>
