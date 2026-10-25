@@ -1,0 +1,10 @@
+{
+  "description": "A frontend project workflow tool that helps developers create and update web application interfaces in their local projects.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

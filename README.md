@@ -7,6 +7,15 @@ product against the parts you've already picked, shows the reason for every poin
 off, and suggests better-fitting options with the price difference. It works for anything
 where products depend on each other: PCs, cameras and lenses, home theater, desk setups.
 
+## Designed in Figma
+
+The extension's side panel was designed in Figma and prototyped with Figma Make, then built
+out into the working extension. [design/README.md](design/README.md) shows what changed from
+the prototype to the product.
+
+- [Figma Make prototype](https://www.figma.com/make/VhuHPyMfgSua6JD8af8xyC/Build-and-Update-Frontend?t=Ah3rObAIdUIzqdzF-1)
+- [Figma Design file](https://www.figma.com/design/0gkGMWul9LlHS94bRzZEGq/Untitled?t=Ah3rObAIdUIzqdzF-1)
+
 ## Status
 
 | Part | State |
@@ -22,6 +31,7 @@ where products depend on each other: PCs, cameras and lenses, home theater, desk
 - `extension/`: Chrome extension, WXT + React + TypeScript (see [extension/README.md](extension/README.md))
 - `client/`: website, React + Vite + TypeScript
 - `docs/api-contract.md`: the API the frontend and the server agree on
+- `design/`: the Figma Make prototype the extension started from, kept for reference and not built
 
 ## Setup
 
