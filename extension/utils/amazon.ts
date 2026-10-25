@@ -39,22 +39,27 @@ export function readCartAsins(page: Document): Set<string> | null {
   return new Set(asins.filter((asin): asin is string => Boolean(asin)));
 }
 
-function textOf(page: Document, selector: string): string | null {
-  return clean(page.querySelector(selector)?.textContent);
+function textOf(within: ParentNode, selector: string): string | null {
+  return clean(within.querySelector(selector)?.textContent);
 }
 
 function clean(text: string | null | undefined): string | null {
   return text?.replace(/\s+/g, ' ').trim() || null;
 }
 
+// The price to pay, in either block depending on the page layout. .a-text-price is the
+// crossed-out list price next to it
+const PRICE_TO_PAY =
+  '#corePrice_feature_div .a-price:not(.a-text-price), #corePriceDisplay_desktop_feature_div .a-price:not(.a-text-price)';
+
 function readPrice(page: Document): number | null {
-  // Amazon uses either price block depending on the page layout
-  const text = textOf(
-    page,
-    '#corePrice_feature_div .a-price .a-offscreen, #corePriceDisplay_desktop_feature_div .a-price .a-offscreen',
-  );
-  const price = Number.parseFloat(text?.replace(/[^0-9.]/g, '') ?? '');
-  return Number.isNaN(price) ? null : price;
+  for (const element of page.querySelectorAll(PRICE_TO_PAY)) {
+    // Many pages leave the screen reader copy empty and only show the price on screen
+    const text = textOf(element, '.a-offscreen') ?? textOf(element, '[aria-hidden="true"]');
+    const price = Number.parseFloat(text?.replace(/[^0-9.]/g, '') ?? '');
+    if (!Number.isNaN(price)) return price;
+  }
+  return null;
 }
 
 function readStars(page: Document): number | null {

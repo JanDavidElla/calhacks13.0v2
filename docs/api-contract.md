@@ -377,7 +377,7 @@ so check them on a live page:
 |---|---|
 | `asin` | the URL, `/dp/<ASIN>` |
 | `title` | `#productTitle` |
-| `price` | `#corePrice_feature_div .a-price .a-offscreen`, without the `$` |
+| `price` | the first `.a-price` in `#corePrice_feature_div` or `#corePriceDisplay_desktop_feature_div` that isn't `.a-text-price` (the crossed-out list price): its `.a-offscreen` text, or its `[aria-hidden="true"]` text when that's empty, without the `$` |
 | `image` | `#landingImage`, its `src` |
 | `stars` | `#acrPopover`, its `title` ("4.7 out of 5 stars") |
 | `ratings_count` | `#acrCustomerReviewText`, its digits ("(11,781)", or "11,781 ratings" on older layouts) |
