@@ -481,6 +481,10 @@ button {
   font-size: 14px;
 }
 
+.summary-card .summary-note {
+  font-size: 13px;
+}
+
 .plan-link {
   background: transparent;
   color: #8a4a1f;

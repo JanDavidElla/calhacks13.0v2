@@ -553,6 +553,12 @@ function App() {
               <span>Budget remaining</span>
               <strong>${(plan.budget - total).toFixed(2)}</strong>
             </div>
+            {plan.budget_estimated && (
+              <p className="summary-note">
+                You didn&apos;t give a budget, so gomdori guessed ${Math.round(plan.budget)}. Tap
+                the pencil to set your own.
+              </p>
+            )}
             {product && (
               <div className="summary-line summary-detail">
                 <span>Change from current</span>
