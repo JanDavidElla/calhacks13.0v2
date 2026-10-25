@@ -82,15 +82,12 @@ button {
   gap: 9px;
 }
 
+/* Wider than tall, like the plane, so it fills the space without being cropped */
 .brand-icon {
-  display: grid;
-  width: 27px;
-  height: 27px;
+  width: 44px;
+  height: 32px;
   flex-shrink: 0;
-  place-items: center;
-  border-radius: 5px;
-  background: #efcb7f;
-  font-weight: 700;
+  object-fit: contain;
 }
 
 .brand h1 {
@@ -198,6 +195,31 @@ button {
 
 .section-heading {
   gap: 10px;
+}
+
+/* The first thing a new shopper sees: the bear, big and centered, saying hello */
+.greeting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Wider than tall, like the plane it shows here */
+.greeting .avatar {
+  width: 220px;
+  height: 160px;
+}
+
+.greeting h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+/* visibility, not display: the avatar keeps its place, so the bear has somewhere to fly to */
+.section-heading-away {
+  visibility: hidden;
 }
 
 /* 56px wide, so its center lines up with the bubble's notch below it. contain, since each
@@ -392,9 +414,16 @@ button {
   text-align: center;
 }
 
+/* Large, since an empty bubble has the whole panel to fill */
+.empty-state strong {
+  font-size: 22px;
+}
+
 .empty-state p {
-  margin: 8px 0 0;
+  margin: 12px 0 0;
   color: #5c4a3a;
+  font-size: 17px;
+  line-height: 1.5;
 }
 
 .summary {
@@ -704,9 +733,39 @@ button {
   pointer-events: none;
 }
 
+/* Square and contained like .avatar, and shrunk from its top-left corner, so the flight's
+   scale lands it exactly on the avatar (see BearOverlay) */
 .bear-overlay img {
-  width: 60%;
-  max-width: 220px;
+  width: min(60%, 220px);
+  aspect-ratio: 1;
+  object-fit: contain;
+  transform-origin: top left;
+}
+
+/* The epiphany: it swells, then slams back past its size and settles. It grows from its center,
+   not from the top-left corner the flight needs; two classes, so this outranks .bear-overlay img. */
+.bear-overlay .bear-bounce {
+  animation: bear-bounce 500ms ease-out;
+  transform-origin: center;
+}
+
+@keyframes bear-bounce {
+  0%,
+  100% {
+    transform: none;
+  }
+
+  35% {
+    transform: scale(1.25);
+  }
+
+  60% {
+    transform: scale(0.92);
+  }
+
+  80% {
+    transform: scale(1.04);
+  }
 }
 
 .error-message {

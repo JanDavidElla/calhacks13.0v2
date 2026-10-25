@@ -1,4 +1,5 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import planeLogo from '@/assets/default.png';
 import type { Check, Plan, SetupEntry } from '@/utils/api';
 import { GET_PRODUCT, PRODUCT_FOUND, type Product, type ProductFoundMessage } from '@/utils/page';
 import { guessCategory } from '@/utils/category';
@@ -11,7 +12,7 @@ import {
   setupItem,
   type ShortlistEntry,
 } from '@/utils/storage';
-import { BearAvatar, BearOverlay } from './Bear';
+import { BearAvatar, BearOverlay, useBearPhase } from './Bear';
 import CartStatus from './CartStatus';
 import RequestForm from './RequestForm';
 import { useAlternatives, type AlternativesState } from './useAlternatives';
@@ -353,6 +354,8 @@ function App() {
   const [tab, setTab] = useState<'product' | 'shortlist'>('product');
   const [editing, setEditing] = useState(false);
   const [evaluation, setEvaluation] = useState<EvaluationState | null>(null);
+  const bear = useBearPhase(evaluation);
+  const avatarRef = useRef<HTMLImageElement>(null);
   const plan = useStoredItem(planItem);
   const setup = useStoredItem(setupItem) ?? [];
   const cartCount = useStoredItem(cartCountItem) ?? 0;
@@ -410,13 +413,25 @@ function App() {
   const category = product && plan ? guessCategory(product.title, plan.parts) : '';
   const replaced = setup.find((entry) => entry.category === category)?.product.price ?? 0;
   const change = product && !onShortlist ? product.price - replaced : 0;
+  const score = evaluation?.status === 'done' ? evaluation.evaluation.score : null;
+  // Views with no score of their own get a set face: pleased with the shopper's own picks on the
+  // list, and waiting when there's no product to look at
+  const face =
+    !plan || editing
+      ? undefined
+      : tab === 'shortlist'
+        ? 'yup'
+        : page.status === 'none'
+          ? 'neutral'
+          : undefined;
+  const asking = plan === null || editing;
 
   return (
     <main className="app-shell">
       <header className="app-header">
         <div className="brand">
-          <span className="brand-icon">✓</span>
-          <h1>Khai&apos;s CTO</h1>
+          <img className="brand-icon" src={planeLogo} alt="" />
+          <h1>gomdori</h1>
         </div>
         <div className="header-actions">
           <button className="icon-button" aria-label="Open in new window">
@@ -463,16 +478,21 @@ function App() {
       </section>
 
       <section className="content">
-        <div className="section-heading">
-          <BearAvatar
-            score={evaluation?.status === 'done' ? evaluation.evaluation.score : null}
-            // The list is the shopper's own picks, so the bear approves of it
-            cheering={tab === 'shortlist' && Boolean(plan) && !editing}
-          />
-          <h2>CTO</h2>
-        </div>
+        {asking ? (
+          // Nothing is scored on this page, so the bear just introduces itself
+          <div className="greeting">
+            <BearAvatar score={null} />
+            <h2>Hi, I&apos;m Gomdori</h2>
+          </div>
+        ) : (
+          // Hidden while the bear is in the middle of the panel, as if it left its place to think
+          <div className={bear.phase ? 'section-heading section-heading-away' : 'section-heading'}>
+            <BearAvatar ref={avatarRef} score={score} face={face} />
+            <h2>gomdori</h2>
+          </div>
+        )}
 
-        {plan === null || editing ? (
+        {asking ? (
           <RequestForm initialText={plan?.transcript ?? ''} onDone={() => setEditing(false)} />
         ) : !plan ? null : (
           // Keyed by what it shows, so another tab or product starts scrolled to the top
@@ -530,7 +550,7 @@ function App() {
           </button>
         </footer>
       )}
-      <BearOverlay state={evaluation} />
+      <BearOverlay phase={bear.phase} score={score} target={avatarRef} onLanded={bear.land} />
     </main>
   );
 }
