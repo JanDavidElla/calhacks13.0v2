@@ -47,11 +47,13 @@ call `/api/alternatives` without a `product` to list the best-scoring options to
   "url": "https://www.amazon.com/dp/B0CPU00001",
   "image": "https://m.media-amazon.com/images/I/example.jpg",
   "stars": 4.7,
+  "ratings_count": 3120,
   "details": "Socket LGA 1700. 14 cores (6P+8E). Works with Intel 600 and 700 series motherboards."
 }
 ```
 
-`image`, `stars`, and `details` can be `null`. `details` is the page's bullet points and spec
+`image`, `stars`, `ratings_count`, and `details` can be `null`. `ratings_count` is how many
+customers gave the star rating. `details` is the page's bullet points and spec
 table as plain text, at most 4,000 characters. The products in `/api/alternatives` include
 it, read from their Amazon listings, so an alternative the user adds carries its specs too.
 
@@ -89,10 +91,13 @@ be tuned, but the shapes won't change.
 | match, one per product | the right kind of product for the part, and it meets every need the request states: 0 | the listing doesn't confirm a stated need: −10 | the wrong kind of product (e.g. an accessory), or it misses a stated need: −80 |
 | compatibility, one per pair of parts that depend on each other | works together: 0 | the listings don't confirm a detail: −10 | definite conflict: −40 |
 | budget, only when `max_price` is sent | at or under budget: 0 | up to 25% over: −10 | more than 25% over: −20 |
-| reviews | 4.0 stars or more: 0 | 3.5 to 3.9, or no rating: −5 | under 3.5: −15 |
+| reviews | 4.0 stars or more, from at least 50 ratings: 0 | 3.5 to 3.9, 4.0 or more from fewer than 50 ratings, or no rating: −5 | under 3.5: −15 |
 
 A failed match costs the most: changing the other part can fix a conflict, but nothing
 makes a lens cap a lens, so the wrong product scores 20 at most.
+
+A good rating needs enough ratings behind it: 5 stars from 3 customers is a warning. When
+`ratings_count` is `null`, the stars alone decide.
 
 Checks come back in this order. The match check covers the needs in `request` ("quiet",
 "white", "for a small room"), so send the user's request with every call.
@@ -167,6 +172,7 @@ Scores one product against the setup. JSON body:
     "url": "https://www.amazon.com/dp/B0CPU00001",
     "image": "https://m.media-amazon.com/images/I/example.jpg",
     "stars": 4.7,
+    "ratings_count": 3120,
     "details": "Socket LGA 1700. 14 cores (6P+8E). Works with Intel 600 and 700 series motherboards."
   },
   "setup": [
@@ -179,6 +185,7 @@ Scores one product against the setup. JSON body:
         "url": "https://www.amazon.com/dp/B0MOBO0001",
         "image": null,
         "stars": 4.6,
+        "ratings_count": 1845,
         "details": null
       }
     }
@@ -222,7 +229,7 @@ Response:
       "kind": "reviews",
       "status": "pass",
       "parts": ["CPU"],
-      "reason": "Rated 4.7 out of 5.",
+      "reason": "Rated 4.7 out of 5 by 3,120 customers.",
       "points": 0
     }
   ]
@@ -253,6 +260,7 @@ plus the product to beat.
         "url": "https://www.amazon.com/dp/B0MOBO0001",
         "image": null,
         "stars": 4.6,
+        "ratings_count": 1845,
         "details": null
       }
     }
@@ -264,6 +272,7 @@ plus the product to beat.
     "url": "https://www.amazon.com/dp/B0CPU00001",
     "image": "https://m.media-amazon.com/images/I/example.jpg",
     "stars": 4.7,
+    "ratings_count": 3120,
     "details": null
   }
 }
@@ -286,6 +295,7 @@ Response:
         "url": "https://www.amazon.com/dp/B0CPU00002",
         "image": "https://m.media-amazon.com/images/I/example2.jpg",
         "stars": 4.8,
+        "ratings_count": 5210,
         "details": null
       },
       "score": 100,
@@ -315,7 +325,7 @@ Response:
           "kind": "reviews",
           "status": "pass",
           "parts": ["CPU"],
-          "reason": "Rated 4.8 out of 5.",
+          "reason": "Rated 4.8 out of 5 by 5,210 customers.",
           "points": 0
         }
       ],
@@ -367,9 +377,10 @@ so check them on a live page:
 |---|---|
 | `asin` | the URL, `/dp/<ASIN>` |
 | `title` | `#productTitle` |
-| `price` | `#corePrice_feature_div .a-price .a-offscreen`, without the `$` |
+| `price` | the first price block found, tried in order: `.priceToPay` or an `.a-price` that isn't `.a-text-price` (the crossed-out list price) in `#corePriceDisplay_desktop_feature_div`, `#corePrice_feature_div`, or `#apex_desktop`, then the older `#tp_price_block_total_price_ww`, `#priceblock_dealprice`, `#priceblock_ourprice`, and `#price_inside_buybox`. Use its `.a-offscreen` text, or its `.a-price-whole` and `.a-price-fraction` when that's empty, without the `$` or `,` |
 | `image` | `#landingImage`, its `src` |
 | `stars` | `#acrPopover`, its `title` ("4.7 out of 5 stars") |
+| `ratings_count` | `#acrCustomerReviewText`, its digits ("(11,781)", or "11,781 ratings" on older layouts) |
 | `details` | a line per `#feature-bullets li`, then a `Label: value` line per row of the `#productOverview_feature_div` and `#prodDetails` tables; pages without those tables list details in `#detailBullets_feature_div li` |
 | `url` | `https://www.amazon.com/dp/<ASIN>`, without tracking parameters |
 

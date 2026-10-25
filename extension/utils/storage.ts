@@ -23,6 +23,12 @@ export type CartReport = {
   items: { asin: string; title: string | null; category: string | null }[];
 };
 
+// The latest fit score (0-100) of each product the side panel scored, by ASIN, so a product
+// added to the cart keeps the score it had on its page
+export const scoresItem = storage.defineItem<Record<string, number>>('local:scores', {
+  fallback: {},
+});
+
 export const cartReportItem = storage.defineItem<CartReport | null>('local:cartReport', {
   fallback: null,
 });
@@ -40,9 +46,19 @@ export async function addToShortlist(
   await setupItem.setValue([...others, { category, product, fromCart }]);
 }
 
+export async function removeFromShortlist(asin: string): Promise<void> {
+  const setup = await setupItem.getValue();
+  await setupItem.setValue(setup.filter((entry) => entry.product.asin !== asin));
+}
+
 // Drops entries that came from the cart but aren't in it anymore
 export async function syncShortlistWithCart(cartAsins: Set<string>): Promise<void> {
   const setup = await setupItem.getValue();
   const kept = setup.filter((entry) => !entry.fromCart || cartAsins.has(entry.product.asin));
   if (kept.length < setup.length) await setupItem.setValue(kept);
+}
+
+export async function saveScore(asin: string, score: number): Promise<void> {
+  const scores = await scoresItem.getValue();
+  if (scores[asin] !== score) await scoresItem.setValue({ ...scores, [asin]: score });
 }

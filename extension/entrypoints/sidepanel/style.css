@@ -29,6 +29,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+  background: #e8dfcf;
 }
 
 button {
@@ -38,11 +39,18 @@ button {
   font: inherit;
 }
 
+/* Chrome sets the side panel's width and the user can drag it wider, so the layout caps its own
+   width and centers itself instead of stretching. It's exactly the panel's height, so only the
+   content scrolls and the header and budget card stay in place. */
 .app-shell {
   display: flex;
-  min-height: 100vh;
+  width: 100%;
+  max-width: 400px;
+  height: 100vh;
   flex-direction: column;
+  margin: 0 auto;
   background: #f3efe6;
+  box-shadow: 0 0 0 1px #d8c7a8;
 }
 
 .app-header {
@@ -178,6 +186,9 @@ button {
 
 .content {
   display: flex;
+  overflow-y: auto;
+  /* Lets it shrink below its content's height, so it scrolls instead of pushing the footer out */
+  min-height: 0;
   flex: 1;
   flex-direction: column;
   gap: 20px;
@@ -198,18 +209,10 @@ button {
   font-size: 22px;
 }
 
-.fit-card,
-.empty-state {
-  border: 1px solid #dcd5c8;
-  border-radius: 12px;
-  background: #fffcf6;
-}
-
 .fit-card {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 16px;
 }
 
 .score-card {
@@ -449,18 +452,6 @@ button {
   font-weight: 600;
 }
 
-.score-card label {
-  display: block;
-}
-
-.score-card select {
-  border: 1px solid #d8c7a8;
-  border-radius: 6px;
-  background: #fffcf6;
-  color: inherit;
-  font: inherit;
-}
-
 .plan-link:disabled {
   color: #45634d;
   cursor: default;
@@ -468,6 +459,206 @@ button {
 
 .empty-state a {
   color: #8a4a1f;
+}
+
+/* A speech bubble: the notch points up at the avatar. It fills the space down to the budget
+   card, and its inside scrolls, since scrolling the bubble itself would clip the notch. */
+.bubble {
+  position: relative;
+  display: flex;
+  min-height: 160px;
+  flex: 1;
+  flex-direction: column;
+  border: 1px solid #dcd5c8;
+  border-radius: 12px;
+  background: #fffcf6;
+}
+
+.bubble-scroll {
+  display: flex;
+  overflow-y: auto;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px 10px;
+}
+
+/* Just a thin gray thumb: no track and no arrow buttons. Only the -webkit- rules, since Chrome
+   ignores them once the standard scrollbar-width or scrollbar-color is set. */
+.content::-webkit-scrollbar,
+.bubble-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.content::-webkit-scrollbar-track,
+.bubble-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content::-webkit-scrollbar-thumb,
+.bubble-scroll::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background: #c9c1b3;
+}
+
+.content::-webkit-scrollbar-thumb:hover,
+.bubble-scroll::-webkit-scrollbar-thumb:hover {
+  background: #a89f90;
+}
+
+.cart-status {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: auto;
+  padding: 12px 4px 0;
+  border-top: 1px solid #dcd5c8;
+  color: #5c4a3a;
+  font-size: 12px;
+}
+
+.cart-status strong {
+  color: #302d27;
+  font-size: 14px;
+}
+
+.cart-status p {
+  margin: 0;
+}
+
+.cart-status .plan-link {
+  align-self: flex-start;
+  padding: 0;
+}
+
+.bubble::before {
+  position: absolute;
+  top: -8px;
+  left: 20px;
+  width: 14px;
+  height: 14px;
+  border-top: 1px solid #dcd5c8;
+  border-left: 1px solid #dcd5c8;
+  background: #fffcf6;
+  content: '';
+  transform: rotate(45deg);
+}
+
+.shortlist-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shortlist-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid #dcd5c8;
+  border-radius: 8px;
+  background: #efebe3;
+  color: #302d27;
+}
+
+.shortlist-item-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* contain, not cover: Amazon photos are on white and shouldn't lose their edges */
+.shortlist-image {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border: 1px solid #dcd5c8;
+  border-radius: 8px;
+  background: #fff;
+  object-fit: contain;
+}
+
+.shortlist-item-text {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Amazon titles run long: one line when closed, the whole title when open */
+.shortlist-item-text strong {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shortlist-item-open .shortlist-item-text strong {
+  white-space: normal;
+}
+
+.shortlist-toggle,
+.shortlist-remove {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  padding: 0;
+  background: none;
+}
+
+.shortlist-toggle .chevron {
+  font-size: 16px;
+  line-height: 6px;
+}
+
+.chevron-open {
+  transform: rotate(180deg);
+}
+
+.shortlist-remove {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.shortlist-score {
+  font-size: 13px;
+}
+
+.shortlist-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 8px;
+  border-top: 1px solid #dcd5c8;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.shortlist-details p {
+  margin: 0;
+}
+
+.shortlist-details a,
+.shortlist-unfilled a {
+  color: #8a4a1f;
+}
+
+.shortlist-unfilled {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 4px;
+  color: #5c4a3a;
+  font-size: 12px;
+}
+
+.shortlist-unfilled span {
+  font-weight: 600;
 }
 
 .request-form {

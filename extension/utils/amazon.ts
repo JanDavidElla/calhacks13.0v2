@@ -26,6 +26,7 @@ export function readProduct(page: Document, path: string): Product | null {
     url: `https://www.amazon.com/dp/${asin}`,
     image: page.querySelector<HTMLImageElement>('#landingImage')?.src ?? null,
     stars: readStars(page),
+    ratings_count: readRatingsCount(page),
     details: readDetails(page),
   };
 }
@@ -40,8 +41,8 @@ export function readCartAsins(page: Document): Set<string> | null {
   return new Set(asins.filter((asin): asin is string => Boolean(asin)));
 }
 
-function textOf(page: Document, selector: string): string | null {
-  return clean(page.querySelector(selector)?.textContent);
+function textOf(within: ParentNode, selector: string): string | null {
+  return clean(within.querySelector(selector)?.textContent);
 }
 
 function clean(text: string | null | undefined): string | null {
@@ -49,13 +50,13 @@ function clean(text: string | null | undefined): string | null {
 }
 
 // Where each page layout puts the price, tried in order. priceToPay comes first because it's what
-// the buyer pays, not a struck-through list price.
+// the buyer pays; .a-text-price is the crossed-out list price next to it
 const PRICE_BLOCKS = [
   '#corePriceDisplay_desktop_feature_div .priceToPay',
-  '#corePrice_feature_div .a-price',
-  '#corePriceDisplay_desktop_feature_div .a-price',
+  '#corePrice_feature_div .a-price:not(.a-text-price)',
+  '#corePriceDisplay_desktop_feature_div .a-price:not(.a-text-price)',
   '#apex_desktop .priceToPay',
-  '#apex_desktop .a-price',
+  '#apex_desktop .a-price:not(.a-text-price)',
   '#tp_price_block_total_price_ww',
   '#priceblock_dealprice',
   '#priceblock_ourprice',
@@ -66,8 +67,8 @@ function readPrice(page: Document): number | null {
   for (const selector of PRICE_BLOCKS) {
     const block = page.querySelector(selector);
     if (!block) continue;
-    // .a-offscreen holds "$86.94" for screen readers; some layouts fill in only the visible
-    // dollars ("86.") and cents ("94")
+    // .a-offscreen holds "$86.94" for screen readers; many layouts leave it empty and fill in
+    // only the visible dollars ("86.") and cents ("94")
     const whole = block.querySelector('.a-price-whole')?.textContent ?? '';
     const fraction = block.querySelector('.a-price-fraction')?.textContent ?? '';
     const text =
@@ -91,6 +92,12 @@ function readStars(page: Document): number | null {
   const title = page.querySelector('#acrPopover')?.getAttribute('title');
   const stars = Number.parseFloat(title ?? '');
   return Number.isNaN(stars) ? null : stars;
+}
+
+function readRatingsCount(page: Document): number | null {
+  // "(11,781)" next to the stars, or "11,781 ratings" on older layouts
+  const digits = textOf(page, '#acrCustomerReviewText')?.replace(/\D/g, '');
+  return digits ? Number.parseInt(digits, 10) : null;
 }
 
 // Rows that say nothing about the product itself

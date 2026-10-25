@@ -1,12 +1,21 @@
-import { useEffect, useState } from 'react';
-import type { Check, Plan, PlannedPart, SetupEntry } from '@/utils/api';
+import { useEffect, useState, type ReactNode } from 'react';
+import type { Check, Plan, SetupEntry } from '@/utils/api';
 import { GET_PRODUCT, PRODUCT_FOUND, type Product, type ProductFoundMessage } from '@/utils/page';
 import { guessCategory } from '@/utils/category';
-import { addToShortlist, cartCountItem, planItem, setupItem } from '@/utils/storage';
+import {
+  addToShortlist,
+  cartCountItem,
+  planItem,
+  removeFromShortlist,
+  saveScore,
+  setupItem,
+  type ShortlistEntry,
+} from '@/utils/storage';
 import CartStatus from './CartStatus';
 import RequestForm from './RequestForm';
 import { useAlternatives, type AlternativesState } from './useAlternatives';
 import { useEvaluation, type EvaluationState } from './useEvaluation';
+import { useShortlistScores, type ShortlistScores } from './useShortlistScores';
 import { useStoredItem } from './useStoredItem';
 
 type PageState =
@@ -68,13 +77,10 @@ function scoreLabel(score: number): string {
 
 type ScoreCardProps = {
   product: Product;
-  parts: PlannedPart[];
-  category: string;
-  onCategoryChange: (category: string) => void;
   state: EvaluationState;
 };
 
-function ScoreCard({ product, parts, category, onCategoryChange, state }: ScoreCardProps) {
+function ScoreCard({ product, state }: ScoreCardProps) {
   const checks = state.status === 'done' ? state.evaluation.checks : [];
   // The worst problem is the one-line summary
   const worst =
@@ -107,14 +113,6 @@ function ScoreCard({ product, parts, category, onCategoryChange, state }: ScoreC
         <strong>{product.title}</strong>
         <span>${product.price.toFixed(2)}</span>
       </div>
-      <label className="page-hint">
-        Scored as{' '}
-        <select value={category} onChange={(event) => onCategoryChange(event.target.value)}>
-          {parts.map((part) => (
-            <option key={part.category}>{part.category}</option>
-          ))}
-        </select>
-      </label>
     </div>
   );
 }
@@ -175,11 +173,15 @@ type ProductFitProps = {
 
 // Analyzes the product as soon as its page opens; the parent keys it by ASIN
 function ProductFit({ product, plan, setup }: ProductFitProps) {
-  const [category, setCategory] = useState(() => guessCategory(product.title, plan.parts));
+  const category = guessCategory(product.title, plan.parts);
   const part = plan.parts.find((candidate) => candidate.category === category) ?? plan.parts[0];
   const state = useEvaluation(product, plan.transcript, part, setup);
   const score = state.status === 'done' ? state.evaluation.score : null;
   const alternatives = useAlternatives(product, plan.transcript, part, setup, score);
+  // Remembered, so the product keeps this score on the list after it's added to the cart
+  useEffect(() => {
+    if (score !== null) void saveScore(product.asin, score);
+  }, [product.asin, score]);
   const checks = state.status === 'done' ? state.evaluation.checks : [];
   const pros = checks.filter((check) => check.status === 'pass');
   const cons = checks.filter((check) => check.status === 'fail');
@@ -192,13 +194,7 @@ function ProductFit({ product, plan, setup }: ProductFitProps) {
 
   return (
     <div className="fit-card">
-      <ScoreCard
-        product={product}
-        parts={plan.parts}
-        category={category}
-        onCategoryChange={setCategory}
-        state={state}
-      />
+      <ScoreCard product={product} state={state} />
       <div className="disclosures">
         {/* Pros start closed: problems matter more, and a shopper opens pros to learn why */}
         {pros.length > 0 && <Disclosure tone="good" title="Pros" checks={pros} startOpen={false} />}
@@ -221,37 +217,126 @@ function ProductFit({ product, plan, setup }: ProductFitProps) {
         )}
       </div>
       <Alternatives state={alternatives} />
-      <button className="plan-link" onClick={() => void addToShortlist(category, product)} disabled={shortlisted}>
+      <button
+        className="plan-link"
+        onClick={() => void addToShortlist(category, product)}
+        disabled={shortlisted}
+      >
         {shortlisted ? '✓ On your shortlist' : `Add to shortlist as ${category}`}
       </button>
     </div>
   );
 }
 
-function Shortlist({ plan, setup }: { plan: Plan; setup: SetupEntry[] }) {
+type ShortlistItemProps = {
+  entry: ShortlistEntry;
+  score: number | undefined;
+  scoring: boolean;
+};
+
+function scoreText(score: number | undefined, scoring: boolean, price: number): string {
+  if (score !== undefined) return `${Math.round(score / 10)}/10`;
+  // Scoring failed, so the price is the most useful thing to show
+  return scoring ? 'Rating…' : `$${price.toFixed(2)}`;
+}
+
+function ShortlistItem({ entry, score, scoring }: ShortlistItemProps) {
+  const [open, setOpen] = useState(false);
+  const { product } = entry;
+
   return (
-    <div className="empty-state">
-      <strong>
-        {setup.length} of {plan.parts.length} parts shortlisted
-      </strong>
-      {plan.parts.map((part) => {
-        const added = setup.find((entry) => entry.category === part.category)?.product;
-        return (
-          <p key={part.category}>
-            {part.category}:{' '}
-            {added ? (
-              <a href={added.url} target="_blank" rel="noreferrer">
-                {added.title} · ${added.price.toFixed(2)}
-              </a>
-            ) : (
-              <a href={part.search_url} target="_blank" rel="noreferrer">
-                shop on Amazon (up to ${part.max_price.toFixed(0)})
-              </a>
-            )}
+    <li className={open ? 'shortlist-item shortlist-item-open' : 'shortlist-item'}>
+      <div className="shortlist-item-heading">
+        {/* Some pages have no main image; an empty square keeps the names lined up */}
+        {product.image ? (
+          <img className="shortlist-image" src={product.image} alt="" />
+        ) : (
+          <span className="shortlist-image" />
+        )}
+        <div className="shortlist-item-text">
+          <strong>{product.title}</strong>
+          <span className="shortlist-score">{scoreText(score, scoring, product.price)}</span>
+        </div>
+        <button
+          className="shortlist-toggle"
+          onClick={() => setOpen((value) => !value)}
+          aria-expanded={open}
+          aria-label="View the details"
+        >
+          <span className={`chevron ${open ? 'chevron-open' : ''}`} aria-hidden="true">
+            ⌄
+          </span>
+        </button>
+        <button
+          className="shortlist-remove"
+          aria-label={`Remove ${product.title}`}
+          onClick={() => void removeFromShortlist(product.asin)}
+        >
+          ×
+        </button>
+      </div>
+      {open && (
+        <div className="shortlist-details">
+          <p>
+            {entry.category} · ${product.price.toFixed(2)}
           </p>
-        );
-      })}
+          <a href={product.url} target="_blank" rel="noreferrer">
+            View on Amazon ↗
+          </a>
+        </div>
+      )}
+    </li>
+  );
+}
+
+// What the avatar says. Only the inside scrolls, so the bubble and its notch stay put.
+function SpeechBubble({ children }: { children: ReactNode }) {
+  return (
+    <div className="bubble">
+      <div className="bubble-scroll">{children}</div>
     </div>
+  );
+}
+
+type ShortlistProps = {
+  plan: Plan;
+  setup: ShortlistEntry[];
+  ratings: ShortlistScores;
+};
+
+function Shortlist({ plan, setup, ratings }: ShortlistProps) {
+  const unfilled = plan.parts.filter(
+    (part) => !setup.some((entry) => entry.category === part.category),
+  );
+
+  return (
+    <>
+      {setup.length === 0 ? (
+        <p className="page-hint">Nothing on your list yet. Add a product from its page.</p>
+      ) : (
+        <ul className="shortlist-items">
+          {setup.map((entry) => (
+            <ShortlistItem
+              key={entry.product.asin}
+              entry={entry}
+              score={ratings.scores[entry.product.asin]}
+              scoring={ratings.scoring.has(entry.product.asin)}
+            />
+          ))}
+        </ul>
+      )}
+      {unfilled.length > 0 && (
+        <div className="shortlist-unfilled">
+          <span>Still needed</span>
+          {unfilled.map((part) => (
+            <a key={part.category} href={part.search_url} target="_blank" rel="noreferrer">
+              {part.category} · shop on Amazon (up to ${part.max_price.toFixed(0)})
+            </a>
+          ))}
+        </div>
+      )}
+      <CartStatus setup={setup} />
+    </>
   );
 }
 
@@ -262,6 +347,8 @@ function App() {
   const plan = useStoredItem(planItem);
   const setup = useStoredItem(setupItem) ?? [];
   const cartCount = useStoredItem(cartCountItem) ?? 0;
+  // Here, not in the list, so cart items are rated before the list is opened
+  const ratings = useShortlistScores(plan, setup);
 
   useEffect(() => {
     // This panel's window: messages and tab events from other windows are ignored
@@ -372,22 +459,24 @@ function App() {
 
         {plan === null || editing ? (
           <RequestForm initialText={plan?.transcript ?? ''} onDone={() => setEditing(false)} />
-        ) : !plan ? null : tab === 'shortlist' ? (
-          <>
-            <Shortlist plan={plan} setup={setup} />
-            <CartStatus setup={setup} />
-          </>
-        ) : product ? (
-          <ProductFit key={product.asin} product={product} plan={plan} setup={setup} />
-        ) : page.status === 'loading' ? (
-          <div className="empty-state">
-            <strong>Reading the page…</strong>
-          </div>
-        ) : (
-          <div className="empty-state">
-            <strong>No product open</strong>
-            <p>Open an Amazon product page to evaluate the item you are viewing.</p>
-          </div>
+        ) : !plan ? null : (
+          // Keyed by what it shows, so another tab or product starts scrolled to the top
+          <SpeechBubble key={tab === 'shortlist' ? tab : (product?.asin ?? page.status)}>
+            {tab === 'shortlist' ? (
+              <Shortlist plan={plan} setup={setup} ratings={ratings} />
+            ) : product ? (
+              <ProductFit key={product.asin} product={product} plan={plan} setup={setup} />
+            ) : page.status === 'loading' ? (
+              <div className="empty-state">
+                <strong>Reading the page…</strong>
+              </div>
+            ) : (
+              <div className="empty-state">
+                <strong>No product open</strong>
+                <p>Open an Amazon product page to evaluate the item you are viewing.</p>
+              </div>
+            )}
+          </SpeechBubble>
         )}
       </section>
 

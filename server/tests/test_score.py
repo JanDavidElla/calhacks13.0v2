@@ -122,22 +122,36 @@ def test_budget_check_allows_up_to_25_percent_over_as_a_warning(
 
 
 @pytest.mark.parametrize(
-    ("stars", "status", "points", "reason"),
+    ("stars", "ratings_count", "status", "points", "reason"),
     [
-        (4.0, "pass", 0, "Rated 4 out of 5."),
-        (3.9, "warn", -5, "Rated 3.9 out of 5."),
-        (3.5, "warn", -5, "Rated 3.5 out of 5."),
-        (3.4, "fail", -15, "Rated 3.4 out of 5."),
-        (None, "warn", -5, "No customer rating yet."),
+        (4.0, None, "pass", 0, "Rated 4 out of 5."),
+        (3.9, None, "warn", -5, "Rated 3.9 out of 5."),
+        (3.5, None, "warn", -5, "Rated 3.5 out of 5."),
+        (3.4, None, "fail", -15, "Rated 3.4 out of 5."),
+        (None, None, "warn", -5, "No customer rating yet."),
+        (4.7, 11781, "pass", 0, "Rated 4.7 out of 5 by 11,781 customers."),
+        (4.2, 50, "pass", 0, "Rated 4.2 out of 5 by 50 customers."),
+        (5.0, 3, "warn", -5, "Rated 5 out of 5, but by only 3 customers."),
+        (5.0, 1, "warn", -5, "Rated 5 out of 5, but by only 1 customer."),
+        (3.0, 12, "fail", -15, "Rated 3 out of 5 by 12 customers."),
     ],
 )
-def test_reviews_check_uses_the_star_rating(
-    stars: float | None, status: CheckStatus, points: int, reason: str
+def test_reviews_check_uses_the_star_rating_and_how_many_rated(
+    stars: float | None, ratings_count: int | None, status: CheckStatus, points: int, reason: str
 ) -> None:
-    check = reviews_check("CPU", stars)
+    check = reviews_check("CPU", stars, ratings_count)
 
     assert (check.kind, check.status, check.points, check.reason) == ("reviews", status, points, reason)
     assert check.parts == ["CPU"]
+
+
+def test_score_warns_when_few_customers_rated_a_product() -> None:
+    barely_rated = RYZEN.model_copy(update={"ratings_count": 3})
+
+    evaluation = score_product("CPU", barely_rated, GOOD_MATCH, [])
+
+    assert evaluation.checks[-1].status == "warn"
+    assert evaluation.score == 95
 
 
 def test_score_skips_the_budget_check_without_a_max_price() -> None:

@@ -39,7 +39,7 @@ function CartStatus({ setup }: CartStatusProps) {
   }
 
   return (
-    <div className="empty-state">
+    <div className="cart-status">
       <strong>Amazon cart</strong>
       {report ? (
         <p>Checked at {new Date(report.checkedAt).toLocaleTimeString()}</p>
