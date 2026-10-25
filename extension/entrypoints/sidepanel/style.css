@@ -303,8 +303,12 @@ button {
 }
 
 .disclosure-heading {
+  width: 100%;
   justify-content: space-between;
+  padding: 0;
+  background: none;
   font-weight: 600;
+  text-align: left;
 }
 
 .chevron {
@@ -318,8 +322,11 @@ button {
 }
 
 .disclosure-detail {
-  display: block;
-  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding-left: 18px;
   color: #302d27;
   font-weight: 400;
   line-height: 1.4;
