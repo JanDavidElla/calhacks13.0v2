@@ -186,6 +186,8 @@ type OtherStoresProps = {
 // The cheapest exact match at another store, or nothing when no store has it
 function OtherStores({ product, state }: OtherStoresProps) {
   if (state.status === 'loading') return <p className="page-hint">Checking other stores…</p>;
+  // Usually Google blocking the search; a quiet note, since the score above still holds
+  if (state.status === 'failed') return <p className="page-hint">Other stores didn&apos;t answer this time.</p>;
   const cheapest = state.status === 'done' ? state.offers[0] : undefined;
   if (!cheapest) return null;
   // In cents first, so $74.99 - $89.99 is exactly -15 and an equal price reads "same price"

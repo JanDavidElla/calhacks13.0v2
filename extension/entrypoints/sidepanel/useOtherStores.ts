@@ -18,8 +18,8 @@ export function useOtherStores(product: Product): OtherStoresState {
     setState({ status: 'loading' });
     findOtherStores(product)
       .then((offers) => current && setState({ status: 'done', offers }))
-      // The price line is extra, and the Google search behind it often fails, so a failure
-      // leaves it out instead of showing an error
+      // The Google search behind it often fails, and the server's message isn't useful to a
+      // shopper, so a failure only says the stores didn't answer
       .catch(() => current && setState({ status: 'failed' }));
     return () => {
       current = false;

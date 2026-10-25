@@ -139,10 +139,10 @@ async def alternatives(request: AlternativesRequest, response: Response) -> Alte
 async def other_stores(request: OtherStoresRequest, response: Response) -> OtherStoresResponse:
     """Find the product the shopper is viewing at other stores, cheapest first."""
     timings = Timings()
+    # Never replayed from the demo cache: Bright Data's prize rules disqualify a demo that
+    # shows saved web data instead of a live search
     with timings.measure("total"), agent_errors():
-        result = await cached(
-            "other-stores", request, OtherStoresResponse, lambda: find_other_stores(request, timings), timings
-        )
+        result = await find_other_stores(request, timings)
 
     response.headers["Server-Timing"] = timings.header()
     return result

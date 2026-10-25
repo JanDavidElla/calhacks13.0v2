@@ -404,7 +404,10 @@ Amazon price, e.g. "Also at Newegg · $74.99 · same price".
 
 **Treat it as optional.** Google often shows Bright Data a captcha, so the search fails often
 (3 of 7 live calls in testing), even though the server retries once with other words. On an
-error, leave the line out instead of showing the message.
+error, show a short note like "Other stores didn't answer this time." instead of the message.
+
+**Always live.** With `DEMO_CACHE` on, this call still searches every time and is never
+saved: Bright Data's prize rules disqualify a demo that shows saved web data.
 
 Expected time: 5–30 seconds for the search plus about 2 for Claude; each search gives up after
 30 seconds. Start it when the product page opens, since it doesn't need the score.
@@ -420,8 +423,8 @@ Every error body is `{"detail": "a message you can show the user"}`.
 |---|---|
 | 400 | The request isn't shopping, can't fit its budget, is too broad (`detail` is a question to ask), or has missing inputs |
 | 422 | The JSON doesn't match the shapes above (`detail` says which field) |
-| 502 | Claude, the Amazon search, or the Google Shopping search failed: offer a retry (for `/api/other-stores`, leave its line out) |
-| 503 | Voice was sent, but voice isn't set up on the server: ask the user to type instead. For `/api/other-stores`: Bright Data isn't set up, so leave its line out |
+| 502 | Claude, the Amazon search, or the Google Shopping search failed: offer a retry (for `/api/other-stores`, show its short note) |
+| 503 | Voice was sent, but voice isn't set up on the server: ask the user to type instead. For `/api/other-stores`: Bright Data isn't set up, so show its short note |
 
 ## Notes for the extension
 
