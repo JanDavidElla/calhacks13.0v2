@@ -51,6 +51,14 @@ export type Alternative = Evaluation & {
   price_difference: number | null;
 };
 
+// The same product at another store; url is Google Shopping's page, which links to the store
+export type Offer = {
+  store: string;
+  title: string;
+  price: number;
+  url: string;
+};
+
 export type EvaluateRequest = {
   request: string;
   category: string;
@@ -84,6 +92,12 @@ export async function findAlternatives(body: AlternativesRequest): Promise<Alter
     JSON.stringify(body),
   );
   return result.alternatives;
+}
+
+// Cheapest first
+export async function findOtherStores(product: Product): Promise<Offer[]> {
+  const result = await post<{ offers: Offer[] }>('/api/other-stores', JSON.stringify({ product }));
+  return result.offers;
 }
 
 // Throws an Error whose message can be shown to the user

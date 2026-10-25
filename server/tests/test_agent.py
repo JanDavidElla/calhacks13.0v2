@@ -15,6 +15,7 @@ from server.agent import (
     check_compatibility,
     evaluate,
     find_alternatives,
+    find_other_stores,
     plan_checklist,
 )
 from server.amazon import search_url
@@ -31,10 +32,13 @@ from server.models import (
     FitCheck,
     Match,
     MatchCheck,
+    Offer,
+    OtherStoresRequest,
     PartChoice,
     PartPick,
     PartPlan,
     Product,
+    SameItems,
     Verdict,
 )
 from server.timing import Timings
@@ -72,6 +76,7 @@ class FakeClaude:
         compatibility: Compatibility | None = None,
         verdict: Verdict | None = None,
         candidate_verdicts: CandidateVerdicts | None = None,
+        same_items: SameItems | None = None,
     ) -> None:
         self.responses: dict[type[BaseModel], BaseModel | None] = {
             BuildPlan: plan,
@@ -79,6 +84,7 @@ class FakeClaude:
             Compatibility: compatibility,
             Verdict: verdict,
             CandidateVerdicts: candidate_verdicts,
+            SameItems: same_items,
         }
         self.prompts: list[str] = []
         self.efforts: list[str] = []
@@ -584,4 +590,49 @@ async def test_find_alternatives_raises_when_the_search_finds_nothing(monkeypatc
 
     with pytest.raises(SearchFailed):
         await find_alternatives(AlternativesRequest(**CPU_PART, setup=[BOARD], product=I5))
+    assert claude.prompts == []
+
+
+def offer(store: str, price: float, title: str = "AMD Ryzen 5 5500 6-Core Processor") -> Offer:
+    return Offer(store=store, title=title, price=price, url=f"https://www.google.com/search?q={store}")
+
+
+def use_stores(monkeypatch: pytest.MonkeyPatch, offers: list[Offer]) -> list[str]:
+    """Replace the Google Shopping search with canned offers and record each query."""
+    queries: list[str] = []
+
+    async def fake_search(query: str) -> list[Offer]:
+        queries.append(query)
+        return offers
+
+    monkeypatch.setattr(agent, "search_stores", fake_search)
+    return queries
+
+
+RYZEN = product("B09VCJ171S", 104.0)
+
+
+@pytest.mark.anyio
+async def test_find_other_stores_returns_claudes_matches_cheapest_first(monkeypatch: pytest.MonkeyPatch) -> None:
+    gaming_pc = offer("Best Buy", 950.49, title="Zotac Gaming PC with AMD Ryzen 5 5500")
+    queries = use_stores(monkeypatch, [offer("Best Buy", 109.99), gaming_pc, offer("Newegg", 99.0)])
+    # 7 is made up and 2 is repeated, so both count once at most
+    claude = use_claude(monkeypatch, FakeClaude(same_items=SameItems(indexes=[0, 2, 2, 7])))
+
+    result = await find_other_stores(OtherStoresRequest(product=RYZEN))
+
+    assert queries == [RYZEN.title]
+    assert [(o.store, o.price) for o in result.offers] == [("Newegg", 99.0), ("Best Buy", 109.99)]
+    assert claude.efforts == [agent.SAME_ITEM_EFFORT]
+    assert '"index": 1, "title": "Zotac Gaming PC with AMD Ryzen 5 5500"' in claude.prompts[0]
+
+
+@pytest.mark.anyio
+async def test_find_other_stores_skips_claude_when_no_store_has_it(monkeypatch: pytest.MonkeyPatch) -> None:
+    use_stores(monkeypatch, [])
+    claude = use_claude(monkeypatch, FakeClaude())
+
+    result = await find_other_stores(OtherStoresRequest(product=RYZEN))
+
+    assert result.offers == []
     assert claude.prompts == []

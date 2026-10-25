@@ -384,6 +384,32 @@ button {
   box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
 }
 
+.other-store {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid #dcd5c8;
+  border-radius: 8px;
+  background: #fffcf6;
+  color: #302d27;
+  text-decoration: none;
+}
+
+.other-store:hover {
+  border-color: #8a4a1f;
+}
+
+.other-store strong {
+  font-weight: 600;
+}
+
+/* Green, like Better options, when it's worth leaving Amazon for */
+.other-store-cheaper {
+  color: #45634d;
+}
+
 .alternative-heading {
   display: flex;
   align-items: baseline;

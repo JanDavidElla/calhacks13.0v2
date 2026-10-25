@@ -19,13 +19,17 @@ from server.models import (
     EvaluateRequest,
     Evaluation,
     FitCheck,
+    OtherStoresRequest,
+    OtherStoresResponse,
     PartChoice,
     PlannedPart,
     PlanResponse,
     Product,
+    SameItems,
     Verdict,
 )
 from server.score import score_product
+from server.stores import search_stores
 from server.timing import Timings
 
 type Effort = Literal["low", "medium", "high", "xhigh", "max"]
@@ -35,9 +39,12 @@ MODEL = "claude-opus-5-5"
 # and checking need reasoning to choose good-value parts that work together
 PLAN_EFFORT: Effort = "low"
 PICK_EFFORT: Effort = "medium"
+# Telling a listing's model apart from another's is a quick read of two titles
+SAME_ITEM_EFFORT: Effort = "low"
 # Each item is one Amazon search, so this also caps Apify cost per request
 MAX_ITEMS = 8
 MAX_ALTERNATIVES = 3
+MAX_OFFERS = 3
 # A stalled request fails after this long instead of the SDK's default 10 minutes; a whole
 # build, with several Claude calls, takes about 40s
 CLAUDE_TIMEOUT_S = 60
@@ -121,6 +128,13 @@ exactly, and judge each candidate as the product on its own.
 {MATCH_GUIDE}
 Then check whether it works with the products already in the user's setup.
 {FIT_GUIDE}"""
+
+SAME_ITEM_PROMPT = """You compare other stores' listings with a product on Amazon.
+Return the indexes of the listings that are the exact same product: same brand
+and model, and the same variant (capacity, size, color) when the Amazon title
+names one. Leave out different models (a Ryzen 5 5500GT is not a Ryzen 5 5500),
+bundles and kits with extra items (a camera with a lens is not the camera body),
+and complete systems that contain the product."""
 
 
 class BuildRejected(Exception):
@@ -332,3 +346,23 @@ async def find_alternatives(request: AlternativesRequest, timings: Timings | Non
     ]
     alternatives.sort(key=lambda a: (-a.score, a.product.price))
     return AlternativesResponse(alternatives=alternatives[:MAX_ALTERNATIVES])
+
+
+async def find_other_stores(request: OtherStoresRequest, timings: Timings | None = None) -> OtherStoresResponse:
+    """Find the product the shopper is viewing at other stores, cheapest first."""
+    timings = timings or Timings()
+    with timings.measure("search"):
+        offers = await search_stores(request.product.title)
+    if not offers:
+        return OtherStoresResponse(offers=[])
+
+    listings = json.dumps([{"index": index, "title": offer.title} for index, offer in enumerate(offers)])
+    with timings.measure("check"):
+        same = await ask_claude(
+            get_client(), SAME_ITEM_EFFORT, SAME_ITEM_PROMPT,
+            f"Amazon product: {request.product.title}\nListings: {listings}", SameItems,
+        )
+    # Indexes Claude made up are dropped, and a repeated one counts once
+    matches = [offers[index] for index in set(same.indexes) if 0 <= index < len(offers)]
+    matches.sort(key=lambda offer: offer.price)
+    return OtherStoresResponse(offers=matches[:MAX_OFFERS])

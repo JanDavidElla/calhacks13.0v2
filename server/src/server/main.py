@@ -15,6 +15,7 @@ from server.agent import (
     check_compatibility,
     evaluate,
     find_alternatives,
+    find_other_stores,
     plan_checklist,
 )
 from server.demo_cache import cached
@@ -26,8 +27,11 @@ from server.models import (
     CompatibilityRequest,
     EvaluateRequest,
     Evaluation,
+    OtherStoresRequest,
+    OtherStoresResponse,
     PlanResponse,
 )
+from server.stores import StoreSearchFailed, StoresUnavailable
 from server.stt import UnreadableAudio, VoiceUnavailable, transcribe
 from server.timing import Timings
 
@@ -48,8 +52,10 @@ def agent_errors() -> Iterator[None]:
         raise HTTPException(502, f"Claude request failed: {e.message}") from e
     except ApifyApiError as e:
         raise HTTPException(502, f"Amazon search failed: {e.message}") from e
-    except (InvalidResponse, SearchFailed) as e:
+    except (InvalidResponse, SearchFailed, StoreSearchFailed) as e:
         raise HTTPException(502, str(e)) from e
+    except StoresUnavailable as e:
+        raise HTTPException(503, str(e)) from e
 
 
 async def read_request(text: str | None, audio: UploadFile | None, timings: Timings) -> str:
@@ -123,6 +129,19 @@ async def alternatives(request: AlternativesRequest, response: Response) -> Alte
     with timings.measure("total"), agent_errors():
         result = await cached(
             "alternatives", request, AlternativesResponse, lambda: find_alternatives(request, timings), timings
+        )
+
+    response.headers["Server-Timing"] = timings.header()
+    return result
+
+
+@app.post("/api/other-stores")
+async def other_stores(request: OtherStoresRequest, response: Response) -> OtherStoresResponse:
+    """Find the product the shopper is viewing at other stores, cheapest first."""
+    timings = Timings()
+    with timings.measure("total"), agent_errors():
+        result = await cached(
+            "other-stores", request, OtherStoresResponse, lambda: find_other_stores(request, timings), timings
         )
 
     response.headers["Server-Timing"] = timings.header()

@@ -20,12 +20,16 @@ from server.models import (
     CompatibilityCheck,
     EvaluateRequest,
     Evaluation,
+    Offer,
+    OtherStoresRequest,
+    OtherStoresResponse,
     PartChoice,
     PlannedPart,
     PlanResponse,
     Product,
     ScoreCheck,
 )
+from server.stores import StoreSearchFailed, StoresUnavailable
 from server.stt import UnreadableAudio, VoiceUnavailable
 from server.timing import Timings
 
@@ -455,3 +459,41 @@ def test_evaluate_flow_failures_return_502(
 
     assert response.status_code == 502
     assert response.json() == {"detail": detail}
+
+
+RYZEN_JSON = {"asin": "B09VCJ171S", "title": "AMD Ryzen 5 5500", "price": 104.0, "url": "https://www.amazon.com/dp/B09VCJ171S"}
+
+
+def test_other_stores_returns_offers_cheapest_first(monkeypatch: pytest.MonkeyPatch) -> None:
+    newegg = Offer(store="Newegg", title="AMD Ryzen 5 5500", price=99.0, url="https://www.google.com/search?q=r5")
+
+    async def fake_find(request: OtherStoresRequest, timings: Timings) -> OtherStoresResponse:
+        assert request.product.asin == "B09VCJ171S"
+        return OtherStoresResponse(offers=[newegg])
+
+    monkeypatch.setattr(main, "find_other_stores", fake_find)
+
+    response = client.post("/api/other-stores", json={"product": RYZEN_JSON})
+
+    assert response.status_code == 200
+    assert response.json() == {"offers": [newegg.model_dump()]}
+
+
+@pytest.mark.parametrize(
+    ("error", "status"),
+    [
+        (StoresUnavailable("Price checks at other stores aren't set up on this server."), 503),
+        (StoreSearchFailed("Google Shopping search failed (captcha). Try again."), 502),
+    ],
+    ids=["no-key", "search-failed"],
+)
+def test_other_stores_failures(monkeypatch: pytest.MonkeyPatch, error: Exception, status: int) -> None:
+    async def fails(request: OtherStoresRequest, timings: Timings) -> OtherStoresResponse:
+        raise error
+
+    monkeypatch.setattr(main, "find_other_stores", fails)
+
+    response = client.post("/api/other-stores", json={"product": RYZEN_JSON})
+
+    assert response.status_code == status
+    assert response.json() == {"detail": str(error)}

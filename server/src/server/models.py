@@ -101,6 +101,10 @@ class CandidateVerdicts(BaseModel):
     candidates: list[CandidateVerdict] = Field(description="One entry per candidate")
 
 
+class SameItems(BaseModel):
+    indexes: list[int] = Field(description="Indexes of the listings that are the exact same product")
+
+
 # Amazon product data, from Apify search results or a product page the extension reads
 
 
@@ -115,6 +119,16 @@ class Product(BaseModel):
     ratings_count: int | None = None
     # Bullet points and spec table text, from a product page or a search run with details
     details: str | None = None
+
+
+# Other stores' prices, from Google Shopping through Bright Data
+
+
+class Offer(BaseModel):
+    store: str
+    title: str
+    price: float
+    url: str  # Google Shopping's page for the listing, which links to the store
 
 
 # API requests and responses
@@ -196,3 +210,11 @@ class Alternative(Evaluation):
 
 class AlternativesResponse(BaseModel):
     alternatives: list[Alternative]
+
+
+class OtherStoresRequest(BaseModel):
+    product: Product  # the Amazon product the shopper is viewing
+
+
+class OtherStoresResponse(BaseModel):
+    offers: list[Offer]  # the same product at other stores, cheapest first
