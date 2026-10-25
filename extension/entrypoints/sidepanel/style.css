@@ -43,6 +43,7 @@ button {
    width and centers itself instead of stretching. It's exactly the panel's height, so only the
    content scrolls and the header and budget card stay in place. */
 .app-shell {
+  position: relative;
   display: flex;
   width: 100%;
   max-width: 400px;
@@ -199,14 +200,13 @@ button {
   gap: 10px;
 }
 
-.section-icon {
-  display: grid;
-  width: 32px;
-  height: 32px;
-  place-items: center;
-  border-radius: 16px;
-  background: #f5eedb;
-  font-size: 22px;
+/* 56px wide, so its center lines up with the bubble's notch below it. contain, since each
+   pose has a different shape and none should be cropped. */
+.avatar {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  object-fit: contain;
 }
 
 .fit-card {
@@ -690,6 +690,23 @@ button {
 .primary-button:disabled {
   cursor: default;
   opacity: 0.5;
+}
+
+/* Covers the whole panel with the bear in the middle. Clicks pass through, so the shopper can
+   still switch tabs or scroll while the analysis runs. */
+.bear-overlay {
+  position: absolute;
+  z-index: 1;
+  display: grid;
+  inset: 0;
+  place-items: center;
+  background: rgb(243 239 230 / 70%);
+  pointer-events: none;
+}
+
+.bear-overlay img {
+  width: 60%;
+  max-width: 220px;
 }
 
 .error-message {

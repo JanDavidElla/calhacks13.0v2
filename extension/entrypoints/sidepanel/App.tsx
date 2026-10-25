@@ -11,6 +11,7 @@ import {
   setupItem,
   type ShortlistEntry,
 } from '@/utils/storage';
+import { BearAvatar, BearOverlay } from './Bear';
 import CartStatus from './CartStatus';
 import RequestForm from './RequestForm';
 import { useAlternatives, type AlternativesState } from './useAlternatives';
@@ -169,13 +170,20 @@ type ProductFitProps = {
   product: Product;
   plan: Plan;
   setup: SetupEntry[];
+  onEvaluation: (state: EvaluationState | null) => void;
 };
 
 // Analyzes the product as soon as its page opens; the parent keys it by ASIN
-function ProductFit({ product, plan, setup }: ProductFitProps) {
+function ProductFit({ product, plan, setup, onEvaluation }: ProductFitProps) {
   const category = guessCategory(product.title, plan.parts);
   const part = plan.parts.find((candidate) => candidate.category === category) ?? plan.parts[0];
   const state = useEvaluation(product, plan.transcript, part, setup);
+  // The bear lives outside the bubble, so it hears about the analysis from here
+  useEffect(() => {
+    onEvaluation(state);
+    // Cleared when this closes, so the bear doesn't keep a verdict on a product that's gone
+    return () => onEvaluation(null);
+  }, [state, onEvaluation]);
   const score = state.status === 'done' ? state.evaluation.score : null;
   const alternatives = useAlternatives(product, plan.transcript, part, setup, score);
   // Remembered, so the product keeps this score on the list after it's added to the cart
@@ -344,6 +352,7 @@ function App() {
   const [page, setPage] = useState<PageState>({ status: 'loading' });
   const [tab, setTab] = useState<'product' | 'shortlist'>('product');
   const [editing, setEditing] = useState(false);
+  const [evaluation, setEvaluation] = useState<EvaluationState | null>(null);
   const plan = useStoredItem(planItem);
   const setup = useStoredItem(setupItem) ?? [];
   const cartCount = useStoredItem(cartCountItem) ?? 0;
@@ -455,7 +464,11 @@ function App() {
 
       <section className="content">
         <div className="section-heading">
-          <span className="section-icon">☷</span>
+          <BearAvatar
+            score={evaluation?.status === 'done' ? evaluation.evaluation.score : null}
+            // The list is the shopper's own picks, so the bear approves of it
+            cheering={tab === 'shortlist' && Boolean(plan) && !editing}
+          />
           <h2>CTO</h2>
         </div>
 
@@ -467,7 +480,13 @@ function App() {
             {tab === 'shortlist' ? (
               <Shortlist plan={plan} setup={setup} ratings={ratings} />
             ) : product ? (
-              <ProductFit key={product.asin} product={product} plan={plan} setup={setup} />
+              <ProductFit
+                key={product.asin}
+                product={product}
+                plan={plan}
+                setup={setup}
+                onEvaluation={setEvaluation}
+              />
             ) : page.status === 'loading' ? (
               <div className="empty-state">
                 <strong>Reading the page…</strong>
@@ -511,6 +530,7 @@ function App() {
           </button>
         </footer>
       )}
+      <BearOverlay state={evaluation} />
     </main>
   );
 }
