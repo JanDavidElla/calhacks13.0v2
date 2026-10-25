@@ -24,6 +24,7 @@ export function readProduct(page: Document, path: string): Product | null {
     url: `https://www.amazon.com/dp/${asin}`,
     image: page.querySelector<HTMLImageElement>('#landingImage')?.src ?? null,
     stars: readStars(page),
+    ratings_count: readRatingsCount(page),
     details: readDetails(page),
   };
 }
@@ -61,6 +62,12 @@ function readStars(page: Document): number | null {
   const title = page.querySelector('#acrPopover')?.getAttribute('title');
   const stars = Number.parseFloat(title ?? '');
   return Number.isNaN(stars) ? null : stars;
+}
+
+function readRatingsCount(page: Document): number | null {
+  // "(11,781)" next to the stars, or "11,781 ratings" on older layouts
+  const digits = textOf(page, '#acrCustomerReviewText')?.replace(/\D/g, '');
+  return digits ? Number.parseInt(digits, 10) : null;
 }
 
 // Rows that say nothing about the product itself

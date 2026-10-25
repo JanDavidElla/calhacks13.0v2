@@ -17,5 +17,6 @@ export type Product = {
   url: string;
   image: string | null;
   stars: number | null;
+  ratings_count: number | null;
   details: string | null;
 };

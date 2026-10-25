@@ -25,6 +25,8 @@ FIT_STATUS: dict[Fit, CheckStatus] = {"fits": "pass", "unconfirmed": "warn", "co
 BUDGET_TOLERANCE = 0.25
 GOOD_STARS = 4.0
 OK_STARS = 3.5
+# Fewer ratings than this can't back up a good rating, e.g. 5 stars from 3 customers
+ENOUGH_RATINGS = 50
 
 
 def scored(kind: CheckKind, status: CheckStatus, parts: list[str], reason: str) -> ScoreCheck:
@@ -52,11 +54,18 @@ def budget_check(category: str, price: float, max_price: float) -> ScoreCheck:
     return scored("budget", "pass", [category], f"${-over:,.2f} under {budget}.")
 
 
-def reviews_check(category: str, stars: float | None) -> ScoreCheck:
+def reviews_check(category: str, stars: float | None, ratings_count: int | None) -> ScoreCheck:
     if stars is None:
         return scored("reviews", "warn", [category], "No customer rating yet.")
     status: CheckStatus = "pass" if stars >= GOOD_STARS else "warn" if stars >= OK_STARS else "fail"
-    return scored("reviews", status, [category], f"Rated {stars:g} out of 5.")
+    rated = f"Rated {stars:g} out of 5"
+    # A count the page reader missed isn't held against the product
+    if ratings_count is None:
+        return scored("reviews", status, [category], f"{rated}.")
+    customers = f"{ratings_count:,} customer{'' if ratings_count == 1 else 's'}"
+    if status == "pass" and ratings_count < ENOUGH_RATINGS:
+        return scored("reviews", "warn", [category], f"{rated}, but by only {customers}.")
+    return scored("reviews", status, [category], f"{rated} by {customers}.")
 
 
 def score_product(
@@ -76,5 +85,5 @@ def score_product(
     checks += [compatibility_check(fit) for fit in fits]
     if max_price is not None:
         checks.append(budget_check(category, product.price, max_price))
-    checks.append(reviews_check(category, product.stars))
+    checks.append(reviews_check(category, product.stars, product.ratings_count))
     return Evaluation(score=max(0, 100 + sum(check.points for check in checks)), checks=checks)

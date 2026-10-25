@@ -43,6 +43,8 @@ def to_product(item: dict[str, Any]) -> Product | None:
         url=f"https://www.amazon.com/dp/{item['asin']}",
         image=item.get("imageUrl"),
         stars=item.get("stars"),
+        # Despite the name, the count of star ratings shown next to the stars
+        ratings_count=item.get("reviewsCount"),
         details=details_text(item),
     )
 

@@ -161,7 +161,9 @@ async def test_build_sends_candidates_without_links_to_claude(
     assert plan_prompt == "A $300 PC"
     assert "Budget: $300.0" in pick_prompt
     candidates = json.loads(pick_prompt.split("Candidates: ", 1)[1])
-    assert candidates["GPU"] == [{"asin": "GPU1", "title": "RX 6600", "price": 149.5, "stars": None}]
+    assert candidates["GPU"] == [
+        {"asin": "GPU1", "title": "RX 6600", "price": 149.5, "stars": None, "ratings_count": None}
+    ]
 
 
 @pytest.mark.anyio

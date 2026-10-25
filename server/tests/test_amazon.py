@@ -65,7 +65,7 @@ def test_search_url_applies_price_headroom_in_cents() -> None:
 
 
 def test_to_product_maps_fields_and_builds_amazon_link() -> None:
-    product = to_product(apify_item("B0TEST", "url", price=99.5))
+    product = to_product(apify_item("B0TEST", "url", price=99.5, reviewsCount=812))
     assert product is not None
     assert product.model_dump() == {
         "asin": "B0TEST",
@@ -74,6 +74,7 @@ def test_to_product_maps_fields_and_builds_amazon_link() -> None:
         "url": "https://www.amazon.com/dp/B0TEST",
         "image": "https://img.example/B0TEST.jpg",
         "stars": 4.5,
+        "ratings_count": 812,
         "details": None,  # a search run without details
     }
 
@@ -121,6 +122,7 @@ def test_to_product_allows_missing_image_and_rating() -> None:
     del item["imageUrl"], item["stars"]
     product = to_product(item)
     assert product is not None and product.image is None and product.stars is None
+    assert product.ratings_count is None
 
 
 @pytest.mark.anyio
