@@ -150,10 +150,11 @@ one. Without a budget, price can't be scored, so there's always one. When it's e
 something like "We assumed about $600. Change it." To change it, call `/api/plan` again with
 the budget added to the request ("a gaming PC, budget $1,500").
 
-When the request is too broad to plan ("stuff for my house"), the response is a 400 whose
-`detail` is a question for the user, such as "Which room are you shopping for?" Show it and
-keep the request box, so the user can type a clearer request. Themes ("Christmas decor for my
-apartment, $200") are planned as usual.
+When the request is too broad to plan ("stuff for my house") or misses something that changes
+the plan (a budget for a gaming PC), the response is a 400 whose `detail` is a question for the
+user, such as "Which room are you shopping for?" The side panel shows it above an empty answer
+box and sends the answer joined to the request ("A gaming PC, $800"). Themes ("Christmas decor
+for my apartment, $200") are planned as usual.
 
 Expected time: about 4–6 seconds (one Claude call, no Amazon search).
 

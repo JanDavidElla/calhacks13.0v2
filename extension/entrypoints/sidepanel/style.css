@@ -716,6 +716,22 @@ button {
   font-weight: 600;
 }
 
+/* The request a question is about, so a short answer reads in context */
+.request-context {
+  margin: 0;
+  color: #6b5d4d;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.link-button {
+  padding: 0;
+  background: transparent;
+  color: #8a4a1f;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
 .request-form textarea {
   padding: 10px 12px;
   border: 1px solid #d8c7a8;
