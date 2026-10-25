@@ -18,8 +18,9 @@ type DisclosureTone = 'good' | 'bad' | 'warn';
 
 type DisclosureProps = {
   title: string;
-  detail: string;
+  checks: Check[];
   tone: DisclosureTone;
+  startOpen?: boolean;
 };
 
 async function readActiveTab(): Promise<Product | null> {
@@ -33,23 +34,29 @@ async function readActiveTab(): Promise<Product | null> {
   }
 }
 
-function Disclosure({ title, detail, tone }: DisclosureProps) {
-  const [open, setOpen] = useState(true);
+function Disclosure({ title, checks, tone, startOpen = true }: DisclosureProps) {
+  const [open, setOpen] = useState(startOpen);
 
   return (
-    <button
-      className={`disclosure disclosure-${tone}`}
-      onClick={() => setOpen((value) => !value)}
-      aria-expanded={open}
-    >
-      <span className="disclosure-heading">
+    <div className={`disclosure disclosure-${tone}`}>
+      <button
+        className="disclosure-heading"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+      >
         <span>{title}</span>
         <span className={`chevron ${open ? '' : 'chevron-closed'}`} aria-hidden="true">
          ⌄
         </span>
-      </span>
-      {open && <span className="disclosure-detail">{detail}</span>}
-    </button>
+      </button>
+      {open && (
+        <ul className="disclosure-detail">
+          {checks.map((check, index) => (
+            <li key={index}>{check.reason}</li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -57,10 +64,6 @@ function scoreLabel(score: number): string {
   if (score >= 80) return 'Great fit';
   if (score >= 50) return 'Conditional fit';
   return 'Poor fit';
-}
-
-function reasons(checks: Check[]): string {
-  return checks.map((check) => check.reason).join(' · ');
 }
 
 type ScoreCardProps = {
@@ -197,23 +200,24 @@ function ProductFit({ product, plan, setup }: ProductFitProps) {
         state={state}
       />
       <div className="disclosures">
-        {pros.length > 0 && <Disclosure tone="good" title="Pros" detail={reasons(pros)} />}
+        {/* Pros start closed: problems matter more, and a shopper opens pros to learn why */}
+        {pros.length > 0 && <Disclosure tone="good" title="Pros" checks={pros} startOpen={false} />}
         {cons.length > 0 && (
           <Disclosure
             tone="bad"
             title={`Cons · ${cons.length} ${cons.length === 1 ? 'issue' : 'issues'}`}
-            detail={reasons(cons)}
+            checks={cons}
           />
         )}
         {missing.length > 0 && (
           <Disclosure
             tone="warn"
             title={`Missing spec · ${missing.length} unverified`}
-            detail={reasons(missing)}
+            checks={missing}
           />
         )}
         {worthChecking.length > 0 && (
-          <Disclosure tone="warn" title="Worth checking" detail={reasons(worthChecking)} />
+          <Disclosure tone="warn" title="Worth checking" checks={worthChecking} />
         )}
       </div>
       <Alternatives state={alternatives} />
