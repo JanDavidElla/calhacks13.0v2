@@ -20,9 +20,14 @@ from server.models import (
     Evaluation,
     FitCheck,
     PartChoice,
+    PartPlan,
     PlannedPart,
     PlanResponse,
     Product,
+    Replan,
+    ReplanRequest,
+    ReplanResponse,
+    SkippedPart,
     Verdict,
 )
 from server.score import score_product
@@ -107,11 +112,35 @@ the request states that applies to this part (e.g. quiet, white, fits a small
 room). Choose unconfirmed when the listing doesn't show a stated need, and
 mismatch for the wrong kind of product or a need it clearly misses. Needs the
 request doesn't state don't count. Leave price and ratings out: they're scored
-separately."""
+separately. A setup item's covers lists the other parts it already fills, like
+an iMac's built-in screen filling Monitor. If one lists this part, the shopper
+doesn't need the product, so choose mismatch and name the item that already
+does the job (e.g. "Your iMac already has a built-in screen.")."""
+
+REPLAN_PROMPT = """You update a shopping plan after the user chose some products.
+For each open part (one nothing in the setup was bought for), decide:
+- filled: a setup item already does this part's job, so the shopper can skip
+  buying it. The item must do it as a main feature or include it in the box
+  (an all-in-one PC's built-in screen fills Monitor; an iMac comes with a
+  keyboard and mouse). A minor built-in extra, like a monitor's small speakers,
+  doesn't count.
+- not_needed: the setup's choices make the part unnecessary or a poor fit
+  (e.g. a graphics card when the computer is an iMac, which can't take one).
+- needed: still to buy.
+Return one entry per open part, copying categories and ASINs exactly."""
 
 EVALUATE_PROMPT = f"""You judge a product the user is viewing on Amazon for one
 part of their request.
 {MATCH_GUIDE}
+Some products fill this part and other parts of the plan at once, like an
+all-in-one PC with a built-in screen (a desktop computer and a monitor), a
+printer that also scans, or a 2-in-1 laptop. List those other parts in covers,
+copying their categories from the other plan parts exactly, and count the
+product as the right kind for this part: it does the job, just with more built
+in. A part counts only if the shopper could skip buying it, because the product
+does that job as a main feature or includes it in the box (e.g. an iMac's
+keyboard and mouse). A minor built-in extra, like a monitor's small speakers,
+doesn't count. Leave covers empty when the product only fills this part.
 Then check whether it works with the products already in their setup.
 {FIT_GUIDE}"""
 
@@ -242,7 +271,11 @@ def listing(category: str, product: Product) -> dict[str, str]:
 
 
 def setup_listing(setup: list[PartChoice]) -> str:
-    return json.dumps([listing(part.category, part.product) for part in setup])
+    # covers only when there are some, so most items look as they always did
+    return json.dumps([
+        {**listing(part.category, part.product), **({"covers": part.covers} if part.covers else {})}
+        for part in setup
+    ])
 
 
 def other_parts(category: str, setup: list[PartChoice]) -> list[PartChoice]:
@@ -259,20 +292,41 @@ def request_line(request: str | None) -> str:
     return f"Request: {request}\n" if request else ""
 
 
+def plan_line(category: str, parts: list[PartPlan]) -> str:
+    """The plan's other parts, which a 2-in-1 product can also fill."""
+    others = [part.category for part in parts if part.category != category]
+    return f"Other plan parts: {json.dumps(others)}\n" if others else ""
+
+
+def covered_parts(category: str, parts: list[PartPlan], covers: list[str]) -> list[PartPlan]:
+    # Only real parts of the plan, other than the product's own, each once
+    others = {part.category: part for part in parts if part.category != category}
+    return [others[name] for name in dict.fromkeys(covers) if name in others]
+
+
 async def evaluate(request: EvaluateRequest, timings: Timings | None = None) -> Evaluation:
-    """Score one product for its part of the request and against the user's setup."""
+    """Score one product for its part of the request and against the user's setup.
+
+    A product that also fills other parts of the plan is scored against their combined budget.
+    """
     timings = timings or Timings()
     product = json.dumps(listing(request.category, request.product))
     setup = other_parts(request.category, request.setup)
     with timings.measure("check"):
         verdict = await ask_claude(
             get_client(), PICK_EFFORT, EVALUATE_PROMPT,
-            f"{request_line(request.request)}Product: {product}\nSetup: {setup_listing(setup)}", Verdict,
+            f"{request_line(request.request)}{plan_line(request.category, request.parts)}"
+            f"Product: {product}\nSetup: {setup_listing(setup)}",
+            Verdict,
         )
-    return score_product(
-        request.category, request.product, verdict.match, checks_on(request.category, verdict.checks),
-        request.max_price,
-    )
+    covered = covered_parts(request.category, request.parts, verdict.covers)
+    covers = [part.category for part in covered]
+    max_price = request.max_price
+    if max_price is not None:
+        max_price += sum(part.max_price for part in covered)
+    # The setup items in covered parts would be replaced too, so checks against them don't count
+    fits = [fit for fit in checks_on(request.category, verdict.checks) if not set(fit.parts) & set(covers)]
+    return score_product(request.category, request.product, verdict.match, fits, max_price, covers)
 
 
 async def find_alternatives(request: AlternativesRequest, timings: Timings | None = None) -> AlternativesResponse:
@@ -332,3 +386,58 @@ async def find_alternatives(request: AlternativesRequest, timings: Timings | Non
     ]
     alternatives.sort(key=lambda a: (-a.score, a.product.price))
     return AlternativesResponse(alternatives=alternatives[:MAX_ALTERNATIVES])
+
+
+def split_budget(parts: list[PartPlan], remaining: float) -> list[PlannedPart]:
+    """The parts with what's left of the budget, each keeping its share of the original split."""
+    planned = sum(part.max_price for part in parts)
+    scale = max(remaining, 0) / planned if planned else 0
+    split = []
+    for part in parts:
+        max_price = round(part.max_price * scale, 2)
+        # Over budget, nothing is left to filter by, so the search keeps the part's first budget
+        url = search_url(part.search_query, max_price or part.max_price)
+        split.append(PlannedPart(**part.model_dump(exclude={"max_price"}), max_price=max_price, search_url=url))
+    return split
+
+
+async def replan(request: ReplanRequest, timings: Timings | None = None) -> ReplanResponse:
+    """Update the plan for what the user chose: skip the open parts their products already
+    take care of, and split what's left of the budget across the rest."""
+    timings = timings or Timings()
+    bought = {item.category for item in request.setup}
+    open_parts = [part for part in request.parts if part.category not in bought]
+    verdicts = {}
+    if open_parts and request.setup:
+        setup = [{"asin": item.product.asin, **listing(item.category, item.product)} for item in request.setup]
+        with timings.measure("check"):
+            result = await ask_claude(
+                get_client(), PLAN_EFFORT, REPLAN_PROMPT,
+                f"{request_line(request.request)}"
+                f"Open parts: {json.dumps([part.category for part in open_parts])}\nSetup: {json.dumps(setup)}",
+                Replan,
+            )
+        verdicts = {verdict.category: verdict for verdict in result.parts}
+
+    asins = {item.product.asin for item in request.setup}
+    filled: list[SkippedPart] = []
+    not_needed: list[SkippedPart] = []
+    needed: list[PartPlan] = []
+    for part in open_parts:
+        verdict = verdicts.get(part.category)
+        # Skipped only for a setup item Claude names, so a made-up ASIN keeps the part on the list
+        if verdict and verdict.status != "needed" and verdict.filled_by in asins:
+            skipped = SkippedPart(category=part.category, asin=verdict.filled_by, reason=verdict.reason)
+            (filled if verdict.status == "filled" else not_needed).append(skipped)
+        else:
+            needed.append(part)
+
+    spent = sum(item.product.price for item in request.setup)
+    # Only what the plan gave its parts is split, so with nothing chosen the budgets stay as planned
+    allotted = min(request.budget, sum(part.max_price for part in request.parts))
+    return ReplanResponse(
+        parts=split_budget(needed, allotted - spent),
+        filled=filled,
+        not_needed=not_needed,
+        remaining=round(request.budget - spent, 2),
+    )

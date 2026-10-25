@@ -16,6 +16,7 @@ from server.agent import (
     evaluate,
     find_alternatives,
     plan_checklist,
+    replan,
 )
 from server.demo_cache import cached
 from server.models import (
@@ -27,6 +28,8 @@ from server.models import (
     EvaluateRequest,
     Evaluation,
     PlanResponse,
+    ReplanRequest,
+    ReplanResponse,
 )
 from server.stt import UnreadableAudio, VoiceUnavailable, transcribe
 from server.timing import Timings
@@ -100,6 +103,17 @@ async def create_plan(response: Response, text: TextField = None, audio: AudioFi
         request = await read_request(text, audio, timings)
         with agent_errors():
             result = await cached("plan", request, PlanResponse, lambda: plan_checklist(request, timings), timings)
+
+    response.headers["Server-Timing"] = timings.header()
+    return result
+
+
+@app.post("/api/replan")
+async def update_plan(request: ReplanRequest, response: Response) -> ReplanResponse:
+    """Skip the parts the user's products already take care of, and split what's left of the budget."""
+    timings = Timings()
+    with timings.measure("total"), agent_errors():
+        result = await cached("replan", request, ReplanResponse, lambda: replan(request, timings), timings)
 
     response.headers["Server-Timing"] = timings.header()
     return result

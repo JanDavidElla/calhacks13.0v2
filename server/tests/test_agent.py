@@ -16,6 +16,8 @@ from server.agent import (
     evaluate,
     find_alternatives,
     plan_checklist,
+    replan,
+    split_budget,
 )
 from server.amazon import search_url
 from server.models import (
@@ -31,10 +33,14 @@ from server.models import (
     FitCheck,
     Match,
     MatchCheck,
+    OpenPart,
     PartChoice,
     PartPick,
     PartPlan,
     Product,
+    Replan,
+    ReplanRequest,
+    SkippedPart,
     Verdict,
 )
 from server.timing import Timings
@@ -72,6 +78,7 @@ class FakeClaude:
         compatibility: Compatibility | None = None,
         verdict: Verdict | None = None,
         candidate_verdicts: CandidateVerdicts | None = None,
+        replan: Replan | None = None,
     ) -> None:
         self.responses: dict[type[BaseModel], BaseModel | None] = {
             BuildPlan: plan,
@@ -79,6 +86,7 @@ class FakeClaude:
             Compatibility: compatibility,
             Verdict: verdict,
             CandidateVerdicts: candidate_verdicts,
+            Replan: replan,
         }
         self.prompts: list[str] = []
         self.efforts: list[str] = []
@@ -343,7 +351,7 @@ I5 = product("I5", 219.99, stars=4.7, details="Socket LGA 1700.")
 
 @pytest.mark.anyio
 async def test_evaluate_scores_claudes_verdict_in_code(monkeypatch: pytest.MonkeyPatch) -> None:
-    claude = use_claude(monkeypatch, FakeClaude(verdict=Verdict(match=match(), checks=[fit("conflict")])))
+    claude = use_claude(monkeypatch, FakeClaude(verdict=Verdict(match=match(), covers=[], checks=[fit("conflict")])))
     timings = Timings()
     request = EvaluateRequest(request=REQUEST, category="CPU", product=I5, setup=[BOARD, RAM], max_price=180)
 
@@ -363,7 +371,7 @@ async def test_evaluate_scores_claudes_verdict_in_code(monkeypatch: pytest.Monke
 @pytest.mark.anyio
 async def test_evaluate_ignores_checks_that_leave_out_the_product(monkeypatch: pytest.MonkeyPatch) -> None:
     between_setup_items = fit("conflict", ("Motherboard", "RAM"))
-    use_claude(monkeypatch, FakeClaude(verdict=Verdict(match=match(), checks=[fit("fits"), between_setup_items])))
+    use_claude(monkeypatch, FakeClaude(verdict=Verdict(match=match(), covers=[], checks=[fit("fits"), between_setup_items])))
 
     result = await evaluate(EvaluateRequest(category="CPU", product=I5, setup=[BOARD, RAM]))
 
@@ -375,7 +383,7 @@ async def test_evaluate_ignores_checks_that_leave_out_the_product(monkeypatch: p
 async def test_evaluate_sends_the_request_and_listings_without_prices_or_links(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    claude = use_claude(monkeypatch, FakeClaude(verdict=Verdict(match=match(), checks=[])))
+    claude = use_claude(monkeypatch, FakeClaude(verdict=Verdict(match=match(), covers=[], checks=[])))
 
     await evaluate(EvaluateRequest(request=REQUEST, category="CPU", product=I5, setup=[BOARD, RAM]))
 
@@ -392,7 +400,7 @@ async def test_evaluate_sends_the_request_and_listings_without_prices_or_links(
 
 @pytest.mark.anyio
 async def test_evaluate_without_a_request_judges_the_part_only(monkeypatch: pytest.MonkeyPatch) -> None:
-    claude = use_claude(monkeypatch, FakeClaude(verdict=Verdict(match=match(), checks=[])))
+    claude = use_claude(monkeypatch, FakeClaude(verdict=Verdict(match=match(), covers=[], checks=[])))
 
     await evaluate(EvaluateRequest(category="CPU", product=I5, setup=[BOARD]))
 
@@ -408,13 +416,54 @@ async def test_evaluate_without_a_request_judges_the_part_only(monkeypatch: pyte
 async def test_evaluate_scores_the_first_product_on_match_price_and_reviews(
     monkeypatch: pytest.MonkeyPatch, setup: list[PartChoice]
 ) -> None:
-    claude = use_claude(monkeypatch, FakeClaude(verdict=Verdict(match=match("unconfirmed"), checks=[])))
+    claude = use_claude(monkeypatch, FakeClaude(verdict=Verdict(match=match("unconfirmed"), covers=[], checks=[])))
 
     result = await evaluate(EvaluateRequest(request=REQUEST, category="CPU", product=I5, setup=setup, max_price=180))
 
     assert claude.prompts[0].endswith("Setup: []")
     assert [(c.kind, c.points) for c in result.checks] == [("match", -10), ("budget", -10), ("reviews", 0)]
     assert result.score == 80
+
+
+DESK_PLAN = [
+    PartPlan(category="Desktop computer", search_query="desktop computer", max_price=750),
+    PartPlan(category="Monitor", search_query="27 inch monitor", max_price=280),
+    PartPlan(category="Desk", search_query="standing desk", max_price=350),
+]
+IMAC = product("IMAC", 1149, details="All-in-one with a built-in 24-inch display.")
+
+
+@pytest.mark.anyio
+async def test_evaluate_scores_a_2_in_1_against_the_budgets_of_every_part_it_fills(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Repeats, a part that isn't in the plan, and the product's own part are dropped
+    covers = ["Monitor", "Monitor", "Webcam", "Desktop computer"]
+    claude = use_claude(monkeypatch, FakeClaude(verdict=Verdict(match=match(), covers=covers, checks=[])))
+    request = EvaluateRequest(category="Desktop computer", product=IMAC, max_price=750, parts=DESK_PLAN)
+
+    result = await evaluate(request)
+
+    assert result.covers == ["Monitor"]
+    budget = next(c for c in result.checks if c.kind == "budget")
+    # $1,149 against $750 alone would be a fail; against $750 + $280 it's $119 over, a warning
+    assert (budget.status, budget.parts) == ("warn", ["Desktop computer", "Monitor"])
+    assert result.score == 90
+    assert "Other plan parts: " + json.dumps(["Monitor", "Desk"]) in claude.prompts[0]
+
+
+@pytest.mark.anyio
+async def test_evaluate_drops_checks_against_setup_items_a_2_in_1_replaces(monkeypatch: pytest.MonkeyPatch) -> None:
+    monitor = PartChoice(category="Monitor", product=product("MON1", 229))
+    desk = PartChoice(category="Desk", product=product("DESK1", 299))
+    checks = [fit("conflict", ("Desktop computer", "Monitor")), fit("fits", ("Desktop computer", "Desk"))]
+    use_claude(monkeypatch, FakeClaude(verdict=Verdict(match=match(), covers=["Monitor"], checks=checks)))
+    request = EvaluateRequest(category="Desktop computer", product=IMAC, setup=[monitor, desk], parts=DESK_PLAN)
+
+    result = await evaluate(request)
+
+    assert [c.parts for c in result.checks if c.kind == "compatibility"] == [["Desktop computer", "Desk"]]
+    assert result.score == 100
 
 
 CPU_PART = {"request": REQUEST, "category": "CPU", "search_query": "ryzen 5 am5", "max_price": 180}
@@ -585,3 +634,100 @@ async def test_find_alternatives_raises_when_the_search_finds_nothing(monkeypatc
     with pytest.raises(SearchFailed):
         await find_alternatives(AlternativesRequest(**CPU_PART, setup=[BOARD], product=I5))
     assert claude.prompts == []
+
+
+# $1,480 of a $1,500 budget given to parts
+ROOM_PLAN = [
+    PartPlan(category="Desktop computer", search_query="desktop computer", max_price=750),
+    PartPlan(category="Monitor", search_query="27 inch monitor", max_price=280),
+    PartPlan(category="Monitor arm", search_query="monitor arm", max_price=50),
+    PartPlan(category="Desk", search_query="standing desk", max_price=400),
+]
+IMAC_SETUP = [PartChoice(category="Desktop computer", product=IMAC)]
+
+
+def open_part(category: str, status: str, filled_by: str | None = None, reason: str = "") -> OpenPart:
+    return OpenPart(category=category, status=status, filled_by=filled_by, reason=reason)
+
+
+@pytest.mark.anyio
+async def test_replan_skips_parts_the_setup_takes_care_of_and_splits_the_rest(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    claude = use_claude(monkeypatch, FakeClaude(replan=Replan(parts=[
+        open_part("Monitor", "filled", "IMAC", "Your iMac has a built-in screen."),
+        open_part("Monitor arm", "not_needed", "IMAC", "The iMac has its own stand."),
+        open_part("Desk", "needed"),
+    ])))
+    timings = Timings()
+
+    result = await replan(ReplanRequest(budget=1500, parts=ROOM_PLAN, setup=IMAC_SETUP), timings)
+
+    assert result.filled == [SkippedPart(category="Monitor", asin="IMAC", reason="Your iMac has a built-in screen.")]
+    assert result.not_needed == [SkippedPart(category="Monitor arm", asin="IMAC", reason="The iMac has its own stand.")]
+    # The $1,480 given to parts, minus the $1,149 iMac, all goes to the desk
+    assert [(p.category, p.max_price) for p in result.parts] == [("Desk", 331)]
+    assert result.remaining == 351
+    # Only the parts nothing was bought for are asked about
+    assert 'Open parts: ["Monitor", "Monitor arm", "Desk"]' in claude.prompts[0]
+    assert claude.efforts == [agent.PLAN_EFFORT]
+    assert list(timings.durations_ms) == ["check"]
+
+
+@pytest.mark.anyio
+async def test_replan_keeps_parts_claude_skips_without_naming_a_setup_item(monkeypatch: pytest.MonkeyPatch) -> None:
+    # A made-up ASIN, and a part Claude left out
+    use_claude(monkeypatch, FakeClaude(replan=Replan(parts=[
+        open_part("Monitor", "filled", "MADEUP", "Something has a screen."),
+        open_part("Desk", "needed"),
+    ])))
+
+    result = await replan(ReplanRequest(budget=1500, parts=ROOM_PLAN, setup=IMAC_SETUP))
+
+    assert (result.filled, result.not_needed) == ([], [])
+    assert [p.category for p in result.parts] == ["Monitor", "Monitor arm", "Desk"]
+
+
+@pytest.mark.anyio
+async def test_replan_with_nothing_chosen_keeps_the_plan_without_asking_claude(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    claude = use_claude(monkeypatch, FakeClaude())
+
+    # $2,000 budget, but only $1,480 given to parts: the rest isn't spread over them
+    result = await replan(ReplanRequest(budget=2000, parts=ROOM_PLAN, setup=[]))
+
+    assert claude.prompts == []
+    assert [(p.category, p.max_price) for p in result.parts] == [(p.category, p.max_price) for p in ROOM_PLAN]
+    assert result.remaining == 2000
+
+
+def test_split_budget_keeps_each_parts_share() -> None:
+    parts = [PartPlan(category="Desk", search_query="desk", max_price=300),
+             PartPlan(category="Lamp", search_query="lamp", max_price=100)]
+
+    split = split_budget(parts, 200)
+
+    assert [(p.max_price, p.search_url) for p in split] == [
+        (150, search_url("desk", 150)), (50, search_url("lamp", 50)),
+    ]
+
+
+def test_split_budget_over_budget_leaves_nothing_but_searches_at_the_first_budget() -> None:
+    parts = [PartPlan(category="Desk", search_query="desk", max_price=300)]
+
+    [desk] = split_budget(parts, -50)
+
+    assert (desk.max_price, desk.search_url) == (0, search_url("desk", 300))
+
+
+@pytest.mark.anyio
+async def test_evaluate_shows_claude_the_parts_each_setup_item_covers(monkeypatch: pytest.MonkeyPatch) -> None:
+    claude = use_claude(monkeypatch, FakeClaude(verdict=Verdict(match=match("mismatch"), covers=[], checks=[])))
+    setup = [PartChoice(category="Desktop computer", product=IMAC, covers=["Monitor"]), BOARD]
+
+    await evaluate(EvaluateRequest(category="Monitor", product=product("MON1", 229), setup=setup))
+
+    listed = json.loads(claude.prompts[0].split("Setup: ")[1])
+    assert listed[0]["covers"] == ["Monitor"]
+    assert "covers" not in listed[1]  # left out when empty

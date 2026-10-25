@@ -24,6 +24,8 @@ from server.models import (
     PlannedPart,
     PlanResponse,
     Product,
+    ReplanRequest,
+    ReplanResponse,
     ScoreCheck,
 )
 from server.stt import UnreadableAudio, VoiceUnavailable
@@ -455,3 +457,44 @@ def test_evaluate_flow_failures_return_502(
 
     assert response.status_code == 502
     assert response.json() == {"detail": detail}
+
+
+REPLAN_BODY = {
+    "request": "a desk setup for $1,500",
+    "budget": 1500,
+    "parts": [{"category": "Monitor", "search_query": "27 inch monitor", "max_price": 280},
+              {"category": "Desk", "search_query": "standing desk", "max_price": 400}],
+    "setup": [{"category": "CPU", "product": CPU.model_dump()}],
+}
+
+
+def test_replan_returns_the_plan_update_in_documented_format(monkeypatch: pytest.MonkeyPatch) -> None:
+    updated = ReplanResponse(
+        parts=[PlannedPart(category="Desk", search_query="standing desk", max_price=380,
+                           search_url="https://www.amazon.com/s?k=standing+desk")],
+        filled=[],
+        not_needed=[],
+        remaining=1280.01,
+    )
+    received: list[ReplanRequest] = []
+
+    async def fake_replan(request: ReplanRequest, timings: Timings) -> ReplanResponse:
+        received.append(request)
+        with timings.measure("check"):
+            pass
+        return updated
+
+    monkeypatch.setattr(main, "replan", fake_replan)
+
+    response = client.post("/api/replan", json=REPLAN_BODY)
+
+    assert response.status_code == 200
+    assert response.json() == updated.model_dump()
+    assert (received[0].budget, [p.category for p in received[0].parts]) == (1500, ["Monitor", "Desk"])
+    assert server_timing_stages(response) == ["check", "total"]
+
+
+def test_replan_needs_a_budget() -> None:
+    response = client.post("/api/replan", json={k: v for k, v in REPLAN_BODY.items() if k != "budget"})
+
+    assert response.status_code == 422

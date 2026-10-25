@@ -54,6 +54,7 @@ class BuildPicks(BaseModel):
 # field descriptions below that tell Claude what each value means
 Match = Literal["matches", "unconfirmed", "mismatch"]
 Fit = Literal["fits", "conflict", "unconfirmed"]
+PartStatus = Literal["needed", "filled", "not_needed"]
 
 
 class MatchCheck(BaseModel):
@@ -88,6 +89,10 @@ class FitCheck(BaseModel):
 
 class Verdict(BaseModel):
     match: MatchCheck
+    covers: list[str] = Field(
+        description="Other parts of the plan this product also fills on its own (e.g. an all-in-one "
+        "PC's built-in screen fills Monitor), copying their categories exactly; empty for most products"
+    )
     checks: list[FitCheck] = Field(description="Compatibility checks against the setup")
 
 
@@ -99,6 +104,29 @@ class CandidateVerdict(BaseModel):
 
 class CandidateVerdicts(BaseModel):
     candidates: list[CandidateVerdict] = Field(description="One entry per candidate")
+
+
+class OpenPart(BaseModel):
+    """Claude's verdict on a part of the plan that nothing in the setup was bought for."""
+
+    category: str = Field(description="The open part's category, copied exactly")
+    status: PartStatus = Field(
+        description="filled: a setup item already does this part's job, so the shopper can skip "
+        "buying it (e.g. an iMac's built-in screen fills Monitor); not_needed: the setup's choices "
+        "make it unnecessary or a poor fit (e.g. a graphics card for a Mac); needed: still to buy"
+    )
+    filled_by: str | None = Field(
+        description="ASIN of the setup item that fills it or makes it unnecessary, copied exactly; "
+        "null when needed"
+    )
+    reason: str = Field(
+        description="One short sentence, under 15 words, in plain words a shopper understands "
+        "(e.g. 'Your iMac has a built-in 24-inch screen.'); empty when needed"
+    )
+
+
+class Replan(BaseModel):
+    parts: list[OpenPart] = Field(description="One entry per open part")
 
 
 # Amazon product data, from Apify search results or a product page the extension reads
@@ -123,6 +151,8 @@ class Product(BaseModel):
 class PartChoice(BaseModel):
     category: str
     product: Product
+    # In the Evaluate flow, the other plan parts this setup item fills, from /api/replan
+    covers: list[str] = []
 
 
 class BuildPart(PartChoice):
@@ -173,6 +203,7 @@ class ScoreCheck(BaseModel):
 class Evaluation(BaseModel):
     score: int  # 0-100: starts at 100, plus every check's points
     checks: list[ScoreCheck]
+    covers: list[str] = []  # other plan parts the product also fills, like an all-in-one PC's monitor
 
 
 class EvaluateRequest(BaseModel):
@@ -181,6 +212,28 @@ class EvaluateRequest(BaseModel):
     product: Product
     setup: list[PartChoice] = []
     max_price: float | None = None  # this part's budget from the plan; price isn't scored without it
+    # The plan's parts, so a product that fills several is scored against all their budgets
+    parts: list[PartPlan] = []
+
+
+class ReplanRequest(BaseModel):
+    request: str | None = None  # the plan's transcript
+    budget: float  # the plan's total budget
+    parts: list[PartPlan]  # the plan's parts as first planned, so budgets are split from the originals
+    setup: list[PartChoice]
+
+
+class SkippedPart(BaseModel):
+    category: str
+    asin: str  # the setup item that fills the part or makes it unnecessary
+    reason: str
+
+
+class ReplanResponse(BaseModel):
+    parts: list[PlannedPart]  # still to buy, each with its share of the budget that's left
+    filled: list[SkippedPart]  # done by a setup item bought for another part, like an iMac's screen
+    not_needed: list[SkippedPart]  # the setup's choices made it unnecessary
+    remaining: float  # the plan's budget minus the setup's total; negative when over
 
 
 class AlternativesRequest(PartPlan):

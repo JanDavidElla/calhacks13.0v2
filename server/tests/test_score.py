@@ -122,6 +122,22 @@ def test_budget_check_allows_up_to_25_percent_over_as_a_warning(
 
 
 @pytest.mark.parametrize(
+    ("covers", "max_price", "reason"),
+    [
+        (["Monitor"], 1030, "$119.00 over the $1,030 budget for Desktop computer and Monitor."),
+        (["Monitor", "Keyboard and mouse"], 1110,
+         "$39.00 over the $1,110 budget for Desktop computer, Monitor and Keyboard and mouse."),
+    ],
+)
+def test_budget_check_names_every_part_a_2_in_1_fills(covers: list[str], max_price: float, reason: str) -> None:
+    # An all-in-one PC, scored against the combined budget of the parts it fills
+    check = budget_check("Desktop computer", 1149, max_price, covers)
+
+    assert (check.status, check.reason) == ("warn", reason)
+    assert check.parts == ["Desktop computer", *covers]
+
+
+@pytest.mark.parametrize(
     ("stars", "ratings_count", "status", "points", "reason"),
     [
         (4.0, None, "pass", 0, "Rated 4 out of 5."),

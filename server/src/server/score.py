@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 from server.models import (
     CheckKind,
     CheckStatus,
@@ -41,17 +43,24 @@ def compatibility_check(fit: FitCheck) -> ScoreCheck:
     return scored("compatibility", FIT_STATUS[fit.result], fit.parts, fit.reason)
 
 
-def budget_check(category: str, price: float, max_price: float) -> ScoreCheck:
+def joined(names: list[str]) -> str:
+    """Names as a sentence lists them: A, A and B, or A, B and C."""
+    return " and ".join([", ".join(names[:-1]), names[-1]]) if len(names) > 1 else names[0]
+
+
+def budget_check(category: str, price: float, max_price: float, covers: Sequence[str] = ()) -> ScoreCheck:
+    """With covers, max_price is the combined budget of the part and the other parts it fills."""
     # "$180" rather than "$180.00", the way the plan states budgets
     shown = f"{max_price:,.0f}" if max_price.is_integer() else f"{max_price:,.2f}"
-    budget = f"this part's ${shown} budget"
+    parts = [category, *covers]
+    budget = f"the ${shown} budget for {joined(parts)}" if covers else f"this part's ${shown} budget"
     over = round(price - max_price, 2)
     if over > 0:
         status: CheckStatus = "fail" if over > max_price * BUDGET_TOLERANCE else "warn"
-        return scored("budget", status, [category], f"${over:,.2f} over {budget}.")
+        return scored("budget", status, parts, f"${over:,.2f} over {budget}.")
     if over == 0:
-        return scored("budget", "pass", [category], f"Right at {budget}.")
-    return scored("budget", "pass", [category], f"${-over:,.2f} under {budget}.")
+        return scored("budget", "pass", parts, f"Right at {budget}.")
+    return scored("budget", "pass", parts, f"${-over:,.2f} under {budget}.")
 
 
 def reviews_check(category: str, stars: float | None, ratings_count: int | None) -> ScoreCheck:
@@ -74,16 +83,20 @@ def score_product(
     match: MatchCheck | None,
     fits: list[FitCheck],
     max_price: float | None = None,
+    covers: Sequence[str] = (),
 ) -> Evaluation:
     """Score a product in code from Claude's verdicts, so the same checks always give the same score.
 
     match is Claude's verdict on whether the product is what the part and the request call
     for. fits are its checks of the product against the setup, empty when nothing in the
-    setup depends on it. Without max_price, the price isn't scored.
+    setup depends on it. Without max_price, the price isn't scored. covers are the other parts
+    of the plan the product also fills, like an all-in-one PC's monitor: max_price is then
+    their combined budget.
     """
     checks = [match_check(category, match)] if match else []
     checks += [compatibility_check(fit) for fit in fits]
     if max_price is not None:
-        checks.append(budget_check(category, product.price, max_price))
+        checks.append(budget_check(category, product.price, max_price, covers))
     checks.append(reviews_check(category, product.stars, product.ratings_count))
-    return Evaluation(score=max(0, 100 + sum(check.points for check in checks)), checks=checks)
+    score = max(0, 100 + sum(check.points for check in checks))
+    return Evaluation(score=score, checks=checks, covers=list(covers))
