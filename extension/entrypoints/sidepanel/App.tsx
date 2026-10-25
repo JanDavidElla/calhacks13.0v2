@@ -124,6 +124,14 @@ function priceDifference(difference: number | null): string {
   return difference < 0 ? `${amount} less` : `${amount} more`;
 }
 
+// "★ 4.6 · 1,845 ratings", or just the stars when Amazon gave no count
+function ratingSummary(stars: number | null, count: number | null): string | null {
+  if (stars === null) return null;
+  const rating = `★ ${stars.toFixed(1)}`;
+  if (count === null) return rating;
+  return `${rating} · ${count.toLocaleString('en-US')} ${count === 1 ? 'rating' : 'ratings'}`;
+}
+
 function Alternatives({ state }: { state: AlternativesState }) {
   if (state.status === 'idle') return null;
 
@@ -143,6 +151,7 @@ function Alternatives({ state }: { state: AlternativesState }) {
           const why =
             checks.find((check) => check.kind === 'compatibility') ??
             checks.find((check) => check.kind === 'match');
+          const rating = ratingSummary(product.stars, product.ratings_count);
           return (
             <a
               key={product.asin}
@@ -158,6 +167,7 @@ function Alternatives({ state }: { state: AlternativesState }) {
                 </span>
               </span>
               <span className="alternative-title">{product.title}</span>
+              {rating && <span className="alternative-rating">{rating}</span>}
               {why && <span className="alternative-reason">{why.reason}</span>}
             </a>
           );

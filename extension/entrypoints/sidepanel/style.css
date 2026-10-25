@@ -382,6 +382,12 @@ button {
   -webkit-line-clamp: 2;
 }
 
+.alternative-rating {
+  color: #8a4a1f;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .alternative-reason {
   color: #5c4a3a;
   font-size: 12px;
