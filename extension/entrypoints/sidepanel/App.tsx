@@ -499,7 +499,7 @@ function App() {
           // Nothing is scored on this page, so the bear just introduces itself
           <div className="greeting">
             <BearAvatar score={null} />
-            <h2>Hi, I&apos;m Gomdori</h2>
+            <h2>Hi, I&apos;m gomdori</h2>
           </div>
         ) : (
           // Hidden while the bear is in the middle of the panel, as if it left its place to think
