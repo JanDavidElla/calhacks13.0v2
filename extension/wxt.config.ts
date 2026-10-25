@@ -7,7 +7,7 @@ export default defineConfig({
   // "CalHack13.0(1)" breaks: the dev server then sees its own sidepanel.html and reloads forever
   watchOptions: { ignored: ['**/.output/**'] },
   manifest: {
-    name: 'Fit Check',
+    name: 'gomdori',
     description: 'Scores Amazon products against the rest of your setup.',
     // The toolbar icon; clicking it opens the side panel (see background.ts)
     action: {},

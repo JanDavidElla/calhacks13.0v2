@@ -50,15 +50,24 @@ Turn the user's request into a list of up to {MAX_ITEMS} distinct items.
 - Themes and open-ended requests (Christmas, filling a room with nature items,
   gifts for a hobby): pick a varied set of items that fit the theme well,
   rather than several of the same thing.
-Split the total budget across the items so the sum stays within it. If no
-budget is given, choose a typical one for the request and set
-budget_estimated. Write short, specific Amazon search queries that will find
-the main product, not accessories.
+Split the total budget across the items so the sum stays within it. Write
+short, specific Amazon search queries that will find the main product, not
+accessories.
 Set rejection to a short explanation, and leave parts empty, only if the
 request can't be met by buying products or the budget clearly can't cover it
-(e.g. a gaming PC for $50). If you can't tell what kind of items to buy (e.g.
-"stuff for my house"), or the request needs far more than {MAX_ITEMS} items to
-be useful, set rejection to one short question that would narrow it instead.
+(e.g. a gaming PC for $50).
+Otherwise, if the request is missing something that would change the plan a
+lot, leave parts empty and set rejection to one short question that asks for
+it, most important first:
+- Budget: if none is given and prices for the request range widely (a gaming
+  PC can cost $400 or $4,000), ask for one, e.g. "What's your budget for the
+  PC?" If prices fall in a narrow range (a phone charger, a desk lamp), choose
+  a typical budget and set budget_estimated instead of asking.
+- What to buy: if you can't tell what kind of items to buy (e.g. "stuff for my
+  house"), or the request needs far more than {MAX_ITEMS} items to be useful,
+  ask what would narrow it.
+- Other details: ask only when the answer changes which items to buy (e.g.
+  which console a controller is for), not for preferences you can pick well.
 Themes, such as Christmas decor for an apartment, are not too broad."""
 
 COMPATIBILITY_GUIDE = """Explain compatibility with one check per relationship that

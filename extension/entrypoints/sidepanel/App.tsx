@@ -347,11 +347,15 @@ function Shortlist({ plan, setup, ratings }: ShortlistProps) {
       {unfilled.length > 0 && (
         <div className="shortlist-unfilled">
           <span>Still needed</span>
-          {unfilled.map((part) => (
-            <a key={part.category} href={part.search_url} target="_blank" rel="noreferrer">
-              {part.category} · shop on Amazon (up to ${part.max_price.toFixed(0)})
-            </a>
-          ))}
+          <ul>
+            {unfilled.map((part) => (
+              <li key={part.category}>
+                <a href={part.search_url} target="_blank" rel="noreferrer">
+                  ${part.max_price.toFixed(0)} · {part.category} 
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
       <CartStatus setup={setup} />
@@ -467,24 +471,27 @@ function App() {
             <button aria-label="Save project">♡</button>
           </div>
         </div>
-        <div className="tabs" role="tablist" aria-label="Project view">
-          <button
-            className={tab === 'product' ? 'tab tab-active' : 'tab'}
-            onClick={() => setTab('product')}
-            role="tab"
-            aria-selected={tab === 'product'}
-          >
-            This product
-          </button>
-          <button
-            className={tab === 'shortlist' ? 'tab tab-active' : 'tab'}
-            onClick={() => setTab('shortlist')}
-            role="tab"
-            aria-selected={tab === 'shortlist'}
-          >
-            List ({cartCount} in Cart)
-          </button>
-        </div>
+        {/* The prompt page has nothing to switch between, so the tabs only appear once it's done */}
+        {!asking && (
+          <div className="tabs" role="tablist" aria-label="Project view">
+            <button
+              className={tab === 'product' ? 'tab tab-active' : 'tab'}
+              onClick={() => setTab('product')}
+              role="tab"
+              aria-selected={tab === 'product'}
+            >
+              This product
+            </button>
+            <button
+              className={tab === 'shortlist' ? 'tab tab-active' : 'tab'}
+              onClick={() => setTab('shortlist')}
+              role="tab"
+              aria-selected={tab === 'shortlist'}
+            >
+              List ({cartCount} in Cart)
+            </button>
+          </div>
+        )}
       </section>
 
       <section className="content">

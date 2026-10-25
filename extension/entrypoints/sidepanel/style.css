@@ -696,6 +696,15 @@ button {
   font-weight: 600;
 }
 
+.shortlist-unfilled ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+  list-style: disc;
+}
+
 .request-form {
   display: flex;
   flex-direction: column;

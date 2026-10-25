@@ -13,8 +13,9 @@ class PartPlan(BaseModel):
 
 class BuildPlan(BaseModel):
     rejection: str | None = Field(
-        description="Why the request can't be fulfilled, or one question that narrows a request "
-        "too broad to plan, written for the user; null if it can be planned"
+        description="Why the request can't be fulfilled, or one question asking for what's "
+        "missing to plan it well (a budget, or what to buy), written for the user; null if it "
+        "can be planned"
     )
     budget: float = Field(
         description="Total budget in USD: the one the user stated, or a typical one for the request"
