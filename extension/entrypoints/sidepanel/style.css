@@ -384,6 +384,32 @@ button {
   box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
 }
 
+.other-store {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid #dcd5c8;
+  border-radius: 8px;
+  background: #fffcf6;
+  color: #302d27;
+  text-decoration: none;
+}
+
+.other-store:hover {
+  border-color: #8a4a1f;
+}
+
+.other-store strong {
+  font-weight: 600;
+}
+
+/* Green, like Better options, when it's worth leaving Amazon for */
+.other-store-cheaper {
+  color: #45634d;
+}
+
 .alternative-heading {
   display: flex;
   align-items: baseline;
@@ -479,6 +505,10 @@ button {
 .summary-detail strong {
   color: #2a5a3b;
   font-size: 14px;
+}
+
+.summary-card .summary-note {
+  font-size: 13px;
 }
 
 .plan-link {
@@ -710,6 +740,22 @@ button {
   flex-direction: column;
   gap: 8px;
   font-weight: 600;
+}
+
+/* The request a question is about, so a short answer reads in context */
+.request-context {
+  margin: 0;
+  color: #6b5d4d;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.link-button {
+  padding: 0;
+  background: transparent;
+  color: #8a4a1f;
+  font-weight: 600;
+  text-decoration: underline;
 }
 
 .request-form textarea {

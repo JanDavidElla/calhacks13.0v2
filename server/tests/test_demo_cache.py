@@ -8,7 +8,15 @@ import server.main as main
 from server.config import get_settings
 from server.demo_cache import cached
 from server.main import app
-from server.models import EvaluateRequest, Evaluation, PartChoice, Product, ScoreCheck
+from server.models import (
+    EvaluateRequest,
+    Evaluation,
+    OtherStoresRequest,
+    OtherStoresResponse,
+    PartChoice,
+    Product,
+    ScoreCheck,
+)
 from server.timing import Timings
 
 CPU = Product(asin="B0CPU00001", title="Intel Core i5-13600K", price=219.99, url="https://www.amazon.com/dp/B0CPU00001")
@@ -155,3 +163,22 @@ def test_evaluate_endpoint_replays_with_demo_cache_on(cache_file: Path, monkeypa
     assert response.json() == EVALUATION.model_dump()
     assert judge.calls == 1
     assert "cache;dur=" in response.headers["Server-Timing"]
+
+
+def test_other_stores_always_runs_live_with_demo_cache_on(cache_file: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    searches = 0
+
+    async def fake_find(request: OtherStoresRequest, timings: Timings) -> OtherStoresResponse:
+        nonlocal searches
+        searches += 1
+        return OtherStoresResponse(offers=[])
+
+    monkeypatch.setattr(main, "find_other_stores", fake_find)
+    client = TestClient(app)
+    body = {"product": CPU.model_dump()}
+
+    client.post("/api/other-stores", json=body)
+    client.post("/api/other-stores", json=body)
+
+    assert searches == 2
+    assert not cache_file.exists()

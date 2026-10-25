@@ -4,6 +4,16 @@ import type { Product } from '@/utils/page';
 // The side panel calls the server directly; host_permissions in wxt.config.ts allows it
 const SERVER = 'http://127.0.0.1:8000';
 
+// A response the server refused; for /api/plan a 400 carries a question or reason for the user
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
 export type PlannedPart = {
   category: string;
   search_query: string;
@@ -41,6 +51,14 @@ export type Alternative = Evaluation & {
   price_difference: number | null;
 };
 
+// The same product at another store; url is Google Shopping's page, which links to the store
+export type Offer = {
+  store: string;
+  title: string;
+  price: number;
+  url: string;
+};
+
 export type EvaluateRequest = {
   request: string;
   category: string;
@@ -76,6 +94,12 @@ export async function findAlternatives(body: AlternativesRequest): Promise<Alter
   return result.alternatives;
 }
 
+// Cheapest first
+export async function findOtherStores(product: Product): Promise<Offer[]> {
+  const result = await post<{ offers: Offer[] }>('/api/other-stores', JSON.stringify({ product }));
+  return result.offers;
+}
+
 // Throws an Error whose message can be shown to the user
 async function post<T>(path: string, body: FormData | string): Promise<T> {
   let response: Response;
@@ -89,7 +113,7 @@ async function post<T>(path: string, body: FormData | string): Promise<T> {
   } catch {
     throw new Error(`Can't reach the server at ${SERVER}. Is it running?`);
   }
-  if (!response.ok) throw new Error(await readError(response));
+  if (!response.ok) throw new ApiError(await readError(response), response.status);
   return response.json();
 }
 

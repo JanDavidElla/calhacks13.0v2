@@ -10,6 +10,7 @@ file first so both sides stay in sync.
 | `POST /api/plan` | Ready |
 | `POST /api/evaluate` | Ready |
 | `POST /api/alternatives` | Ready |
+| `POST /api/other-stores` | Ready |
 
 The request and response shapes are already defined in `server/src/server/models.py`.
 
@@ -22,7 +23,8 @@ The request and response shapes are already defined in `server/src/server/models
    isn't a product, show something like "Open a product to evaluate it."
 3. **Evaluate.** The user clicks Evaluate. The extension reads the page and calls
    `/api/evaluate`, which returns a 0–100 score and the checks behind it. The first product
-   is scored too: on whether it matches the request, its price, and its reviews.
+   is scored too: on whether it matches the request, its price, and its reviews. As soon as
+   the page opens, `/api/other-stores` also looks for the same product at other stores.
 4. **Improve.** At the same time, the frontend calls `/api/alternatives` to get up to 3
    options that score higher, with the price difference. A conflict can also be fixed by
    changing the *other* part (see "Fixing the other part" below).
@@ -150,10 +152,11 @@ one. Without a budget, price can't be scored, so there's always one. When it's e
 something like "We assumed about $600. Change it." To change it, call `/api/plan` again with
 the budget added to the request ("a gaming PC, budget $1,500").
 
-When the request is too broad to plan ("stuff for my house"), the response is a 400 whose
-`detail` is a question for the user, such as "Which room are you shopping for?" Show it and
-keep the request box, so the user can type a clearer request. Themes ("Christmas decor for my
-apartment, $200") are planned as usual.
+When the request is too broad to plan ("stuff for my house") or misses something that changes
+the plan (a budget for a gaming PC), the response is a 400 whose `detail` is a question for the
+user, such as "Which room are you shopping for?" The side panel shows it above an empty answer
+box and sends the answer joined to the request ("A gaming PC, $800"). Themes ("Christmas decor
+for my apartment, $200") are planned as usual.
 
 Expected time: about 4–6 seconds (one Claude call, no Amazon search).
 
@@ -357,6 +360,61 @@ When a `compatibility` check fails, its `parts` names both sides, for example
 `/api/alternatives` for the Motherboard part from the plan. In `setup`, swap the motherboard
 for the CPU being evaluated, and send the current motherboard as `product`.
 
+## `POST /api/other-stores`
+
+Looks for the product the user is viewing at other stores. Bright Data searches Google
+Shopping, then Claude keeps only the listings of the exact same product, not a different
+model, a bundle, or a PC that contains it. Only new listings from stores shoppers know count
+(Walmart, Target, Best Buy, Newegg and the others in `server/src/server/stores.py`), not
+marketplace sellers or unknown sites. JSON body: the product.
+
+```json
+{
+  "product": {
+    "asin": "B0BTTZFQTP",
+    "title": "GIGABYTE B550M K AMD AM4 Micro-ATX Motherboard",
+    "price": 74.99,
+    "url": "https://www.amazon.com/dp/B0BTTZFQTP",
+    "image": null,
+    "stars": 4.4,
+    "ratings_count": 1157,
+    "details": null
+  }
+}
+```
+
+Response, cheapest first, at most 3:
+
+```json
+{
+  "offers": [
+    {
+      "store": "Newegg",
+      "title": "Gigabyte b550m k AMD AM4 microATX Motherboard",
+      "price": 74.99,
+      "url": "https://www.google.com/search?ibp=oshop&q=Gigabyte+b550m+k"
+    }
+  ]
+}
+```
+
+`url` is Google Shopping's page for the listing, which links to the store. An empty list means
+no known store has the same product. Show the cheapest offer with its difference from the
+Amazon price, e.g. "Also at Newegg · $74.99 · same price".
+
+**Treat it as optional.** Google often shows Bright Data a captcha, so the search fails often
+(3 of 7 live calls in testing), even though the server retries once with other words. On an
+error, show a short note like "Other stores didn't answer this time." instead of the message.
+
+**Always live.** With `DEMO_CACHE` on, this call still searches every time and is never
+saved: Bright Data's prize rules disqualify a demo that shows saved web data.
+
+Expected time: 5–30 seconds for the search plus about 2 for Claude; each search gives up after
+30 seconds. Start it when the product page opens, since it doesn't need the score.
+
+The server needs `BRIGHTDATA_API_KEY` in `server/.env` and a Bright Data SERP API zone named
+`serp_api1` (or `BRIGHTDATA_SERP_ZONE` set to the zone's name).
+
 ## Errors
 
 Every error body is `{"detail": "a message you can show the user"}`.
@@ -365,8 +423,8 @@ Every error body is `{"detail": "a message you can show the user"}`.
 |---|---|
 | 400 | The request isn't shopping, can't fit its budget, is too broad (`detail` is a question to ask), or has missing inputs |
 | 422 | The JSON doesn't match the shapes above (`detail` says which field) |
-| 502 | Claude or the Amazon search failed: offer a retry |
-| 503 | Voice was sent, but voice isn't set up on the server: ask the user to type instead |
+| 502 | Claude, the Amazon search, or the Google Shopping search failed: offer a retry (for `/api/other-stores`, show its short note) |
+| 503 | Voice was sent, but voice isn't set up on the server: ask the user to type instead. For `/api/other-stores`: Bright Data isn't set up, so show its short note |
 
 ## Notes for the extension
 

@@ -17,6 +17,7 @@ import CartStatus from './CartStatus';
 import RequestForm from './RequestForm';
 import { useAlternatives, type AlternativesState } from './useAlternatives';
 import { useEvaluation, type EvaluationState } from './useEvaluation';
+import { useOtherStores, type OtherStoresState } from './useOtherStores';
 import { useShortlistScores, type ShortlistScores } from './useShortlistScores';
 import { useStoredItem } from './useStoredItem';
 
@@ -177,6 +178,36 @@ function Alternatives({ state }: { state: AlternativesState }) {
   );
 }
 
+type OtherStoresProps = {
+  product: Product;
+  state: OtherStoresState;
+};
+
+// The cheapest exact match at another store, or nothing when no store has it
+function OtherStores({ product, state }: OtherStoresProps) {
+  if (state.status === 'loading') return <p className="page-hint">Checking other stores…</p>;
+  // Usually Google blocking the search; a quiet note, since the score above still holds
+  if (state.status === 'failed') return <p className="page-hint">Other stores didn&apos;t answer this time.</p>;
+  const cheapest = state.status === 'done' ? state.offers[0] : undefined;
+  if (!cheapest) return null;
+  // In cents first, so $74.99 - $89.99 is exactly -15 and an equal price reads "same price"
+  const difference = Math.round((cheapest.price - product.price) * 100) / 100;
+
+  return (
+    <a
+      className={difference < 0 ? 'other-store other-store-cheaper' : 'other-store'}
+      href={cheapest.url}
+      target="_blank"
+      rel="noreferrer"
+    >
+      <strong>Also at {cheapest.store}</strong>
+      <span>
+        ${cheapest.price.toFixed(2)} · {priceDifference(difference)}
+      </span>
+    </a>
+  );
+}
+
 type ProductFitProps = {
   product: Product;
   plan: Plan;
@@ -197,6 +228,7 @@ function ProductFit({ product, plan, setup, onEvaluation }: ProductFitProps) {
   }, [state, onEvaluation]);
   const score = state.status === 'done' ? state.evaluation.score : null;
   const alternatives = useAlternatives(product, plan.transcript, part, setup, score);
+  const otherStores = useOtherStores(product);
   // Remembered, so the product keeps this score on the list after it's added to the cart
   useEffect(() => {
     if (score !== null) void saveScore(product.asin, score);
@@ -214,6 +246,7 @@ function ProductFit({ product, plan, setup, onEvaluation }: ProductFitProps) {
   return (
     <div className="fit-card">
       <ScoreCard product={product} state={state} />
+      <OtherStores product={product} state={otherStores} />
       <div className="disclosures">
         {/* Pros start closed: problems matter more, and a shopper opens pros to learn why */}
         {pros.length > 0 && <Disclosure tone="good" title="Pros" checks={pros} startOpen={false} />}
@@ -553,6 +586,12 @@ function App() {
               <span>Budget remaining</span>
               <strong>${(plan.budget - total).toFixed(2)}</strong>
             </div>
+            {plan.budget_estimated && (
+              <p className="summary-note">
+                You didn&apos;t give a budget, so gomdori guessed ${Math.round(plan.budget)}. Tap
+                the pencil to set your own.
+              </p>
+            )}
             {product && (
               <div className="summary-line summary-detail">
                 <span>Change from current</span>
